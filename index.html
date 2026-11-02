@@ -1,0 +1,1442 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מעבדת מעגלים – Circuit Lab</title>
+<style>
+:root{--bg:#06090e;--panel:#0d131b;--panel2:#111a24;--line:#1e2937;--line2:#2d3d52;--text:#e8eef6;--muted:#8b9aad;--cyan:#38d1ff;--gold:#ffb020;--green:#3ddc84;--red:#ff5a36;--blue:#4f8cff;--violet:#c4b5fd;
+--sans:"Segoe UI","Rubik","Heebo","Assistant",system-ui,-apple-system,sans-serif;--mono:"JetBrains Mono","Cascadia Mono","Consolas","SF Mono","Menlo",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+header{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+header h1{font-size:15px;margin:0;white-space:nowrap;font-weight:600}
+header h1 b{color:var(--cyan)}
+.tb{display:flex;gap:6px;align-items:center;overflow-x:auto;flex:1;scrollbar-width:none;padding:2px 0}
+.tb::-webkit-scrollbar{display:none}
+button{font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap;min-height:34px;flex:none}
+button:hover{border-color:var(--line2)}
+button.on{background:#0d2636;border-color:var(--cyan);color:var(--cyan)}
+button.pri{background:#0d2636;border-color:#1f5f7a}
+button:disabled{opacity:.4;cursor:default}
+.sep{width:1px;height:22px;background:var(--line);flex:none}
+main{flex:1;display:flex;min-height:0}
+#pal{width:96px;flex:none;border-inline-end:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:6px}
+.pi{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 3px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:11px;color:var(--muted);flex:none}
+.pi svg{width:60px;height:34px;overflow:visible}
+.pi:hover{border-color:var(--cyan);color:var(--text)}
+#stage{flex:1;position:relative;min-width:0;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none;direction:ltr}
+#status{position:absolute;inset-inline:8px;bottom:8px;display:flex;gap:6px;align-items:flex-end;pointer-events:none}
+#hint{flex:1;font-size:12px;color:var(--muted);background:rgba(13,19,27,.85);border:1px solid var(--line);border-radius:8px;padding:5px 9px;pointer-events:none}
+#hint:empty{display:none}
+.zb{pointer-events:auto;display:flex;gap:4px}
+.zb button{min-width:34px;padding:4px 8px;background:rgba(17,26,36,.9)}
+#badge{pointer-events:auto}
+#side{width:360px;flex:none;border-inline-start:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line);flex:none}
+.tabs button{flex:1;border:0;border-radius:0;background:none;border-bottom:2px solid transparent;min-height:40px}
+.tabs button.on{border-bottom-color:var(--cyan);background:none}
+#sideMin{display:none;flex:none;max-width:44px}
+.pane{flex:1;overflow:auto;padding:12px;font-size:14px;line-height:1.5}
+.pane h3{margin:0 0 8px;font-size:15px}
+.pane h4{margin:14px 0 6px;font-size:13px;color:var(--muted);font-weight:600}
+.fld{display:grid;grid-template-columns:90px 1fr 34px;gap:6px;align-items:center;margin-bottom:8px}
+.fld label{font-size:13px;color:var(--muted)}
+.fld input{font:inherit;font-family:var(--mono);font-size:14px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;direction:ltr;text-align:left}
+.fld input:focus{outline:none;border-color:var(--cyan)}
+.fld input.bad{border-color:var(--red)}
+.fld span{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px}
+.kv div:nth-child(odd){color:var(--muted)}
+.kv div:nth-child(even),.num{font-family:var(--mono);direction:ltr;unicode-bidi:isolate;text-align:start}
+.kv div:nth-child(even){text-align:end}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:start;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.num{text-align:end;white-space:nowrap}
+.msg{border-radius:8px;padding:6px 9px;margin-bottom:6px;font-size:13px}
+.msg.err{background:rgba(255,90,54,.12);border:1px solid rgba(255,90,54,.5)}
+.msg.warn{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.45)}
+.msg.ok{background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.4)}
+pre.calc{font-family:var(--mono);font-size:12px;white-space:pre-wrap;unicode-bidi:plaintext;text-align:start;margin:0;line-height:1.55;color:#cfd8e3}
+.help li{margin-bottom:5px;color:#c9d3df}
+.help b{color:var(--cyan);font-weight:600}
+.menu{position:fixed;z-index:50;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:220px}
+.menu button{border:0;background:none;text-align:start;width:100%}
+.menu button:hover{background:var(--panel2)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0d2636;border:1px solid var(--cyan);color:var(--text);padding:8px 14px;border-radius:10px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+#ghost{position:fixed;pointer-events:none;z-index:70;display:none;width:60px;height:34px;opacity:.85}
+#print{display:none}
+button.play{background:#0f3a24;border-color:#2f8f5b;color:#7ef0b0;font-weight:600}
+button.play.on{background:#3a1410;border-color:#ff5a36;color:#ffb4a3}
+.pill{font-size:12px;border-radius:20px;padding:3px 10px;border:1px solid var(--line)}
+.pill.err{color:#ff8a6a;border-color:rgba(255,90,54,.5)}.pill.warn{color:var(--gold);border-color:rgba(255,176,32,.45)}.pill.info{color:var(--cyan)}
+.dcard{border:1px solid var(--line);border-inline-start:4px solid var(--muted);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--panel2)}
+.dcard.err{border-inline-start-color:var(--red)}.dcard.warn{border-inline-start-color:var(--gold)}.dcard.info{border-inline-start-color:var(--cyan)}
+.dcard.foc{box-shadow:0 0 0 1px var(--cyan)}
+.dt{font-weight:600;margin-bottom:6px}
+.dh{font-size:12px;color:var(--cyan);margin:8px 0 2px;font-weight:600}
+.dw{font-size:13px;color:#c9d3df}
+.dcard ol{margin:2px 0 0;padding-inline-start:20px;font-size:13px;color:#c9d3df}
+.dcard ol li{margin-bottom:3px}
+.dloc{font-size:12px;min-height:28px;padding:3px 8px}
+table.et td{vertical-align:top}
+table.et tr.rsel td{background:rgba(56,209,255,.07)}
+table.et tr.rerr td:first-child{box-shadow:inset -3px 0 0 var(--red)}
+table.et tr.rwarn td:first-child{box-shadow:inset -3px 0 0 var(--gold)}
+.ti{font:inherit;font-family:var(--mono);font-size:12.5px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:100%;direction:ltr;text-align:left}
+.ti:focus{outline:none;border-color:var(--cyan)}.ti.bad{border-color:var(--red)}
+.ti.tn{font-family:var(--sans);font-weight:600;width:72px}
+.tt{font-size:11px;color:var(--muted);margin-top:2px}
+.tl{display:block;margin-bottom:4px}.tk{display:block;font-size:11px;color:var(--muted)}
+.tv{display:flex;gap:4px;align-items:center}.tv i{font-style:normal;font-size:11px;color:var(--muted);font-family:var(--mono);min-width:12px}
+.flow{stroke:#ffd166;stroke-width:3.4;stroke-linecap:round;stroke-dasharray:0.1 14;fill:none;animation:fl 1.5s linear infinite;pointer-events:none}
+.flow.fp{stroke:#ffe8a3;opacity:.85}
+@keyframes fl{to{stroke-dashoffset:-14.1}}
+.glow .sym{stroke:#ff6b5a;filter:drop-shadow(0 0 3px #ff3b30) drop-shadow(0 0 9px #ff3b30);animation:gp .8s ease-in-out infinite alternate}
+.glow .lbl{fill:#ff8a7a}
+@keyframes gp{from{filter:drop-shadow(0 0 2px #ff3b30) drop-shadow(0 0 4px #ff3b30)}to{filter:drop-shadow(0 0 5px #ff3b30) drop-shadow(0 0 14px #ff3b30)}}
+/* schematic styles (screen) */
+.wire{stroke:#5fb8e6;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wire.sel{stroke:var(--gold);stroke-width:3}
+.sym{stroke:#e8eef6;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sym .fillc{fill:#0d131b}
+.psel .sym{stroke:var(--gold)}
+.sym text,.symt{fill:#e8eef6;stroke:none;font:600 12px var(--sans)}
+.psel .symt{fill:var(--gold)}
+.jn{fill:#5fb8e6}
+.pin{fill:#8b9aad}
+.pin.dang{fill:var(--red)}
+.lbl{fill:#c4b5fd;font:600 12px var(--sans)}
+.res{fill:#3ddc84;font:500 11px var(--mono)}
+.res.w{fill:var(--gold)}
+.ntag rect{fill:#0d2636;stroke:#1f5f7a}
+.ntag text{fill:#38d1ff;font:500 10.5px var(--mono)}
+.hit{fill:transparent;stroke:transparent}
+.whit{stroke:transparent;stroke-width:16;fill:none}
+.prev{stroke:var(--gold);stroke-width:2;stroke-dasharray:5 4;fill:none}
+.cur{fill:none;stroke:var(--gold);stroke-width:1.5}
+.dropseg{stroke:var(--gold);stroke-width:5;opacity:.6;fill:none}
+@media (max-width:820px){
+ header h1{display:none}
+ main{flex-direction:column}
+ #pal{width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border:0;border-bottom:1px solid var(--line);padding:5px}
+ .pi{width:68px}
+ #side{width:auto;height:40%;border:0;border-top:1px solid var(--line)}
+ #side.min{height:41px}
+ #side.min .pane{display:none}
+ #sideMin{display:block}
+}
+@media print{
+ body{display:block;height:auto;overflow:visible;background:#fff;color:#000}
+ body>*:not(#print){display:none!important}
+ #print{display:block;color:#000;font-family:Arial,sans-serif}
+ #print svg{max-width:100%;height:auto}
+ #print table{font-size:11px}
+ #print th,#print td{border-bottom:1px solid #bbb;color:#000}
+ #print pre{white-space:pre-wrap;font-size:10.5px;unicode-bidi:plaintext}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>⚡ <b>מעבדת</b> מעגלים</h1>
+ <div class="tb" id="tb">
+  <button id="bPlay" class="play"></button>
+  <button id="bSel" class="on"></button>
+  <button id="bWire"></button>
+  <span class="sep"></span>
+  <button id="bRot"></button>
+  <button id="bDel"></button>
+  <button id="bUndo">↶</button>
+  <button id="bRedo">↷</button>
+  <span class="sep"></span>
+  <button id="bEx"></button>
+  <button id="bNew"></button>
+  <button id="bTidy"></button>
+  <button id="bExp" class="pri"></button>
+  <button id="bVals" class="on"></button>
+  <button id="bLang">EN</button>
+ </div>
+</header>
+<main>
+ <div id="pal"></div>
+ <div id="stage">
+  <svg id="cv" xmlns="http://www.w3.org/2000/svg">
+   <defs><pattern id="gp" x="-10" y="-10" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.1" fill="#223042"/></pattern></defs>
+   <g id="view"><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/><g id="sch"></g><g id="ov"></g></g>
+  </svg>
+  <div id="status"><div id="hint"></div><div class="zb"><button id="badge" style="display:none"></button><button id="zOut">−</button><button id="zFit">⤢</button><button id="zIn">+</button></div></div>
+ </div>
+ <aside id="side">
+  <div class="tabs"><button data-tab="part" class="on"></button><button data-tab="tbl"></button><button data-tab="diag"></button><button data-tab="res"></button><button data-tab="calc"></button><button id="sideMin">▾</button></div>
+  <div class="pane" id="pane"></div>
+ </aside>
+</main>
+<div id="toast"></div>
+<svg id="ghost" viewBox="-50 -30 100 60"></svg>
+<input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+<div id="print"></div>
+<script>
+"use strict";
+/* ================= ENGINE (pure) ================= */
+const GRID=20;
+const TYPES={
+ R:{pfx:'R',pins:[[-40,0],[40,0]],box:[40,10],props:[['R','10k','Ω'],['Pmax','0.25','W']],line:true},
+ V:{pfx:'V',pins:[[0,-40],[0,40]],box:[18,40],props:[['V','5','V']],line:true,vert:true},
+ I:{pfx:'I',pins:[[0,-40],[0,40]],box:[18,40],props:[['I','1m','A']],line:true,vert:true},
+ G:{pfx:'GND',pins:[[0,0]],box:[12,22],props:[]},
+ OA:{pfx:'U',pins:[[-40,-20],[-40,20],[40,0]],box:[40,32],props:[['A','1e6',''],['Vsat','13','V'],['Imax','25m','A']]},
+ C:{pfx:'C',pins:[[-40,0],[40,0]],box:[40,14],props:[['C','1u','F'],['Vmax','50','V']],line:true},
+ L:{pfx:'L',pins:[[-40,0],[40,0]],box:[40,10],props:[['L','1m','H'],['Irated','1','A']],line:true},
+ AM:{pfx:'AM',pins:[[-40,0],[40,0]],box:[40,14],props:[],line:true},
+ VM:{pfx:'VM',pins:[[-40,0],[40,0]],box:[40,14],props:[],line:true},
+};
+const SI={p:1e-12,n:1e-9,u:1e-6,'µ':1e-6,'μ':1e-6,m:1e-3,k:1e3,K:1e3,M:1e6,G:1e9};
+function parseVal(s){
+ if(typeof s==='number')return s;
+ s=String(s==null?'':s).trim().replace(',','.');
+ const m=s.match(/^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*(meg|MEG|Meg|[pnuµμmkKMG])?/);
+ if(!m)return NaN;
+ let v=parseFloat(m[1]);
+ if(m[2])v*=/meg/i.test(m[2])?1e6:SI[m[2]];
+ return v;
+}
+function eng(v,u,d){
+ u=u||'';d=d||4;
+ if(v==null||!isFinite(v))return '—';
+ if(Math.abs(v)<1e-13)return '0 '+u;
+ const pf=[[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n'],[1e-12,'p']];
+ const a=Math.abs(v);
+ const p=pf.find(q=>a>=q[0]*0.99995)||pf[pf.length-1];
+ let s=(v/p[0]).toPrecision(d);
+ if(/e/.test(s))s=String(+s);else if(s.indexOf('.')>=0)s=s.replace(/\.?0+$/,'');
+ return s+' '+p[1]+u;
+}
+function rp(x,y,r){r=((r%4)+4)%4;for(let i=0;i<r;i++){const t=x;x=-y;y=t;}return [x,y];}
+function pinsAbs(p){return TYPES[p.type].pins.map(([x,y])=>{const q=rp(x,y,p.rot||0);return [p.x+q[0],p.y+q[1]];});}
+const K=(x,y)=>x+','+y;
+function onSegInt(x,y,s){ // strictly inside segment
+ const [x1,y1,x2,y2]=s;
+ if((x2-x1)*(y-y1)-(y2-y1)*(x-x1)!==0)return false;
+ const d=(x-x1)*(x2-x1)+(y-y1)*(y2-y1),L=(x2-x1)**2+(y2-y1)**2;
+ return d>0&&d<L;
+}
+function buildNets(st){
+ const par={};
+ const add=k=>{if(!(k in par))par[k]=k;};
+ const f=k=>{while(par[k]!==k){par[k]=par[par[k]];k=par[k];}return k;};
+ const un=(a,b)=>{add(a);add(b);a=f(a);b=f(b);if(a!==b)par[a]=b;};
+ const pts=[],segs=[],deg={};
+ const inc=(k,n)=>{deg[k]=(deg[k]||0)+n;};
+ st.parts.forEach(p=>pinsAbs(p).forEach(([x,y],i)=>{const k=K(x,y);add(k);pts.push({k,x,y,pin:[p.id,i]});inc(k,1);}));
+ st.wires.forEach(w=>{for(let i=0;i<w.pts.length;i++){const [x,y]=w.pts[i];const k=K(x,y);add(k);pts.push({k,x,y,w:w.id});
+   if(i>0){const [x0,y0]=w.pts[i-1];un(K(x0,y0),k);segs.push([x0,y0,x,y]);inc(K(x0,y0),1);inc(k,1);}}});
+ const uniq={};pts.forEach(q=>{uniq[q.k]=q;});
+ const uq=Object.values(uniq);
+ for(const s of segs)for(const q of uq)if(onSegInt(q.x,q.y,s)){un(q.k,K(s[0],s[1]));inc(q.k,2);}
+ const gr=new Set();
+ st.parts.forEach(p=>{if(p.type==='G'){const [x,y]=pinsAbs(p)[0];gr.add(f(K(x,y)));}});
+ const nodeOfRoot={},nodes=[{name:'GND'}];let n=0;
+ for(const q of pts){const r=f(q.k);if(r in nodeOfRoot)continue;if(gr.has(r)){nodeOfRoot[r]=0;continue;}n++;nodeOfRoot[r]=n;nodes.push({name:'N'+n,x:q.x,y:q.y,wire:false});}
+ for(const q of pts){if(q.w){const id=nodeOfRoot[f(q.k)];if(id>0&&!nodes[id].wire){nodes[id].x=q.x;nodes[id].y=q.y;nodes[id].wire=true;}}}
+ const pinCount={};
+ st.parts.forEach(p=>pinsAbs(p).forEach(([x,y])=>{const r=f(K(x,y));pinCount[r]=(pinCount[r]||0)+1;}));
+ const partNodes={},partRoots={},dangling=[];
+ st.parts.forEach(p=>{partRoots[p.id]=[];partNodes[p.id]=pinsAbs(p).map(([x,y])=>{const r=f(K(x,y));partRoots[p.id].push(r);if(pinCount[r]<2&&p.type!=='G'&&!gr.has(r))dangling.push([x,y]);return nodeOfRoot[r];});});
+ const junctions=Object.keys(deg).filter(k=>deg[k]>=3).map(k=>k.split(',').map(Number));
+ const nodeAt=(x,y)=>{const k=K(x,y);return (k in par)?nodeOfRoot[f(k)]:-1;};
+ return {nodes,partNodes,partRoots,dangling,junctions,nodeAt,deg,hasGround:gr.size>0};
+}
+function gauss(A,b){
+ const n=b.length,M=A.map((r,i)=>{const a=Array.from(r);a.push(b[i]);return a;});
+ for(let c=0;c<n;c++){
+  let p=c,mx=Math.abs(M[c][c]);
+  for(let r=c+1;r<n;r++){const v=Math.abs(M[r][c]);if(v>mx){mx=v;p=r;}}
+  if(mx<1e-15)return null;
+  if(p!==c){const t=M[c];M[c]=M[p];M[p]=t;}
+  for(let r=c+1;r<n;r++){const fct=M[r][c]/M[c][c];if(fct)for(let k=c;k<=n;k++)M[r][k]-=fct*M[c][k];}
+ }
+ const x=new Array(n);
+ for(let r=n-1;r>=0;r--){let s=M[r][n];for(let k=r+1;k<n;k++)s-=M[r][k]*x[k];x[r]=s/M[r][r];}
+ return x;
+}
+const VSRC={V:1,L:1,AM:1,OA:1};
+function solve(st){
+ const net=buildNets(st),N=net.nodes.length-1,parts=st.parts;
+ const out={net,errs:[],warns:[],ok:false,res:{},nodeV:[0],pinI:{}};
+ if(!parts.length){out.empty=true;return out;}
+ if(net.dangling.length)out.warns.push({k:'dang',n:net.dangling.length});
+ if(!net.hasGround){out.errs.push({k:'noGround'});return out;}
+ const val={};
+ for(const p of parts){val[p.id]={};for(const [k] of TYPES[p.type].props){const v=parseVal(p.props[k]);
+   if(!isFinite(v)||((k==='R'||k==='Vsat'||k==='A')&&v<=0))out.errs.push({k:'badVal',p:p.name,prop:k});val[p.id][k]=v;}}
+ if(out.errs.length)return out;
+ const br=parts.filter(p=>VSRC[p.type]),bi={};
+ br.forEach((p,i)=>bi[p.id]=N+i);
+ const M=N+br.length,oas=parts.filter(p=>p.type==='OA'),sat={};
+ oas.forEach(p=>sat[p.id]=0);
+ let x=null,conv=false;
+ for(let it=0;it<40;it++){
+  const A=Array.from({length:M},()=>new Float64Array(M)),z=new Float64Array(M);
+  for(let i=0;i<N;i++)A[i][i]+=1e-12;
+  const g=(a,b,G)=>{if(a>0)A[a-1][a-1]+=G;if(b>0)A[b-1][b-1]+=G;if(a>0&&b>0){A[a-1][b-1]-=G;A[b-1][a-1]-=G;}};
+  for(const p of parts){const nd=net.partNodes[p.id],v=val[p.id];
+   if(p.type==='R')g(nd[0],nd[1],1/v.R);
+   else if(p.type==='I'){if(nd[0]>0)z[nd[0]-1]+=v.I;if(nd[1]>0)z[nd[1]-1]-=v.I;}
+   else if(p.type==='V'||p.type==='L'||p.type==='AM'){const k=bi[p.id],a=nd[0],b=nd[1];
+    if(a>0){A[a-1][k]+=1;A[k][a-1]+=1;}if(b>0){A[b-1][k]-=1;A[k][b-1]-=1;}z[k]=p.type==='V'?v.V:0;}
+   else if(p.type==='OA'){const k=bi[p.id],nm=nd[0],np=nd[1],no=nd[2];
+    if(no>0){A[no-1][k]+=1;A[k][no-1]+=1;}
+    if(sat[p.id]===0){if(np>0)A[k][np-1]-=v.A;if(nm>0)A[k][nm-1]+=v.A;z[k]=0;}
+    else{if(no>0){z[k]=sat[p.id]*v.Vsat;}else{A[k][k]=1;}}
+   }
+  }
+  x=gauss(A,z);
+  if(!x){out.errs.push({k:'singular'});return out;}
+  let ch=false;
+  for(const p of oas){const nd=net.partNodes[p.id],V=n=>n>0?x[n-1]:0,lin=val[p.id].A*(V(nd[1])-V(nd[0])),vs=val[p.id].Vsat;
+   const s=lin>vs*(1+1e-9)?1:lin<-vs*(1+1e-9)?-1:0;if(s!==sat[p.id]){sat[p.id]=s;ch=true;}}
+  if(!ch){conv=true;break;}
+ }
+ if(!conv)out.warns.push({k:'noConv'});
+ // currents below ~1nA are numerical leakage from the 1e-12 S stabilizer — show them as 0
+ for(let i=N;i<M;i++)if(Math.abs(x[i])<1e-9)x[i]=0;
+ const V=n=>n>0?x[n-1]:0;
+ for(let i=0;i<=N;i++)out.nodeV[i]=V(i);
+ for(let i=1;i<=N;i++)if(Math.abs(out.nodeV[i])>1e6)out.warns.push({k:'float',node:net.nodes[i].name});
+ let Pdel=0,Pabs=0;
+ for(const p of parts){const nd=net.partNodes[p.id],v=val[p.id],r={type:p.type};
+  const Va=V(nd[0]),Vb=nd.length>1?V(nd[1]):0;
+  r.Va=Va;r.Vb=Vb;r.vals=v;let pin=[];
+  switch(p.type){
+   case 'R':r.V=Va-Vb;r.I=r.V/v.R;if(Math.abs(r.I)<1e-9)r.I=0;r.P=r.I*r.I*v.R;Pabs+=r.P;pin=[r.I,-r.I];
+    if(isFinite(v.Pmax)&&v.Pmax>0&&r.P>v.Pmax){r.over=true;out.warns.push({k:'pmax',p:p.name,P:r.P,Pmax:v.Pmax});}break;
+   case 'V':{const i=x[bi[p.id]];r.I=-i;r.P=v.V*r.I;Pdel+=r.P;pin=[i,-i];break;}
+   case 'L':case 'AM':{const i=x[bi[p.id]];r.I=i;r.V=Va-Vb;pin=[i,-i];if(p.type==='L'){r.E=0.5*v.L*i*i;if(isFinite(v.Irated)&&v.Irated>0&&Math.abs(i)>v.Irated){r.over=true;out.warns.push({k:'li',p:p.name,I:i,Ir:v.Irated});}}break;}
+   case 'I':r.V=Va-Vb;r.I=v.I;r.P=r.V*v.I;Pdel+=r.P;pin=[-v.I,v.I];break;
+   case 'C':r.V=Va-Vb;r.Q=v.C*r.V;r.E=0.5*v.C*r.V*r.V;pin=[0,0];if(isFinite(v.Vmax)&&v.Vmax>0&&Math.abs(r.V)>v.Vmax){r.over=true;out.warns.push({k:'cv',p:p.name,V:r.V,Vmax:v.Vmax});}break;
+   case 'VM':r.V=Va-Vb;pin=[0,0];break;
+   case 'OA':{const i=x[bi[p.id]];r.Vm=V(nd[0]);r.Vp=V(nd[1]);r.Vout=V(nd[2]);r.Vd=r.Vp-r.Vm;r.Iout=-i;r.P=r.Vout*r.Iout;Pdel+=r.P;r.sat=sat[p.id];pin=[0,0,i];
+    if(r.sat)out.warns.push({k:'sat',p:p.name,s:r.sat,Vsat:v.Vsat});
+    if(isFinite(v.Imax)&&v.Imax>0&&Math.abs(r.Iout)>v.Imax)out.warns.push({k:'imax',p:p.name,I:r.Iout,Imax:v.Imax});break;}
+   case 'G':pin=[0];break;
+  }
+  r.nodes=nd;out.res[p.id]=r;out.pinI[p.id]=pin;
+ }
+ out.Pdel=Pdel;out.Pabs=Pabs;out.ok=true;
+ return out;
+}
+/* ================= END ENGINE ================= */
+
+/* ================= i18n ================= */
+let lang='he';
+try{lang=localStorage.getItem('cl_lang')||'he';}catch(e){}
+const L=(he,en)=>lang==='he'?he:en;
+const TNAME={R:['נגד','Resistor'],V:['מקור מתח','Voltage source'],I:['מקור זרם','Current source'],G:['אדמה','Ground'],OA:['מגבר שרת','Op-amp'],C:['קבל','Capacitor'],L:['סליל','Inductor'],AM:['מד זרם','Ammeter'],VM:['מד מתח','Voltmeter']};
+const PNAME={R:['התנגדות','Resistance'],Pmax:['הספק מרבי','Power rating'],V:['מתח','Voltage'],I:['זרם','Current'],A:['הגבר חוג פתוח','Open-loop gain'],Vsat:['רוויה ±','Saturation ±'],Imax:['זרם מוצא מרבי','Max out current'],C:['קיבול','Capacitance'],L:['השראות','Inductance'],Vmax:['מתח מרבי','Voltage rating'],Irated:['זרם מרבי','Current rating']};
+const tn=t=>L(TNAME[t][0],TNAME[t][1]);
+const pn=k=>L(PNAME[k][0],PNAME[k][1]);
+function msgText(m){
+ switch(m.k){
+  case 'noGround':return L('אין אדמה במעגל — הוסף רכיב "אדמה" כדי שיהיה ממה למדוד מתחים.','No ground — add a Ground part so voltages have a reference.');
+  case 'badVal':return L(`ערך לא תקין ב-${m.p} (${pn(m.prop)})`,`Invalid value in ${m.p} (${pn(m.prop)})`);
+  case 'singular':return L('אי אפשר לפתור: יש לולאה של מקורות מתח / קצר (למשל מד זרם ישירות על מקור מתח), או מוצא מגבר מחובר לאדמה.','Cannot solve: voltage-source loop / short circuit (e.g. ammeter across a source), or op-amp output tied to ground.');
+  case 'dang':return L(`${m.n} הדקים לא מחוברים (מסומנים באדום)`,`${m.n} unconnected pins (shown in red)`);
+  case 'noConv':return L('החישוב של מצבי הרוויה לא התייצב (משוב חיובי?)','Saturation iteration did not settle (positive feedback?)');
+  case 'float':return L(`הצומת ${m.node} צף — אין לו מסלול זרם DC לאדמה`,`Node ${m.node} is floating — no DC path to ground`);
+  case 'pmax':return L(`${m.p} מתחמם: ${eng(m.P,'W')} > ${eng(m.Pmax,'W')} מותר`,`${m.p} overloaded: ${eng(m.P,'W')} > ${eng(m.Pmax,'W')} rating`);
+  case 'sat':return L(`${m.p} ברוויה (${m.s>0?'+':'−'}${eng(m.Vsat,'V')}) — המוצא לא יכול לעלות יותר`,`${m.p} saturated at ${m.s>0?'+':'−'}${eng(m.Vsat,'V')}`);
+  case 'cv':return L(`${m.p}: ${eng(Math.abs(m.V),'V')} מעל מתח העבודה ${eng(m.Vmax,'V')}`,`${m.p}: ${eng(Math.abs(m.V),'V')} exceeds its ${eng(m.Vmax,'V')} rating`);
+  case 'li':return L(`${m.p}: ${eng(Math.abs(m.I),'A')} מעל הזרם המרבי ${eng(m.Ir,'A')}`,`${m.p}: ${eng(Math.abs(m.I),'A')} exceeds its ${eng(m.Ir,'A')} rating`);
+  case 'imax':return L(`${m.p} מוציא ${eng(Math.abs(m.I),'A')} — יותר מ-${eng(m.Imax,'A')} שמגבר טיפוסי מספק`,`${m.p} sources ${eng(Math.abs(m.I),'A')} — above the ${eng(m.Imax,'A')} limit`);
+ }
+ return '';
+}
+
+/* ================= symbols ================= */
+function symMarkup(type,rot){
+ const tr=`rotate(${(rot||0)*90})`,ct=`rotate(${-(rot||0)*90})`;
+ let s='';
+ switch(type){
+  case 'R':s=`<path d="M-40 0H-24l4 -8l8 16l8 -16l8 16l8 -16l8 16l4 -8H40"/>`;break;
+  case 'V':s=`<path d="M0 -40V-16M0 16V40"/><circle class="fillc" r="16"/><path d="M-4 -7H4M0 -11V-3M-4 8H4"/>`;break;
+  case 'I':s=`<path d="M0 -40V-16M0 16V40"/><circle class="fillc" r="16"/><path d="M0 9V-9M-5 -3L0 -9L5 -3"/>`;break;
+  case 'G':s=`<path d="M0 0V10M-12 10H12M-7 15H7M-3 20H3"/>`;break;
+  case 'OA':s=`<path d="M-40 -20H-28M-40 20H-28M28 0H40"/><path class="fillc" d="M-28 -32L-28 32L28 0Z"/><path d="M-23 -20H-15M-23 20H-15M-19 16V24"/>`;break;
+  case 'C':s=`<path d="M-40 0H-6M6 0H40M-6 -14V14M6 -14V14"/>`;break;
+  case 'L':s=`<path d="M-40 0H-24a6 6 0 0 1 12 0a6 6 0 0 1 12 0a6 6 0 0 1 12 0a6 6 0 0 1 12 0H40"/>`;break;
+  case 'AM':case 'VM':s=`<path d="M-40 0H-14M14 0H40"/><circle class="fillc" r="14"/><text class="symt" transform="${ct}" text-anchor="middle" dy="4.5">${type==='AM'?'A':'V'}</text>`;break;
+ }
+ return `<g class="sym" transform="${tr}">${s}</g>`;
+}
+
+/* ================= state ================= */
+let st=null,sel=null,mode='select',wireStart=null,hoverPt=null,dropSeg=null;
+let view={x:60,y:60,s:1},showVals=true,tab='part',R=null;
+let hist=[],redoS=[];
+let uid=1;
+const nid=p=>p+(Date.now().toString(36))+(uid++);
+const $=id=>document.getElementById(id);
+const svg=$('cv'),gView=$('view'),gSch=$('sch'),gOv=$('ov');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function defProps(t){const o={};TYPES[t].props.forEach(([k,d])=>o[k]=d);return o;}
+function autoName(t){if(t==='G')return 'GND';const pf=TYPES[t].pfx;const used=new Set(st.parts.map(p=>p.name));let i=1;while(used.has(pf+i))i++;return pf+i;}
+function mkPart(t,x,y,rot,props,name){return {id:nid('p'),type:t,x,y,rot:rot||0,name:name||autoName(t),props:Object.assign(defProps(t),props||{})};}
+const getPart=id=>st.parts.find(p=>p.id===id);
+const getWire=id=>st.wires.find(w=>w.id===id);
+
+/* ---------- examples ---------- */
+function ex(name){
+ const s={parts:[],wires:[]};const prev=st;st=s;
+ const P=(t,x,y,rot,props,nm)=>{const p=mkPart(t,x,y,rot,props,nm);s.parts.push(p);return p;};
+ const W=(...pts)=>s.wires.push({id:nid('w'),pts});
+ if(name==='inv'){
+  P('V',100,200,0,{V:'1'},'Vin');P('G',100,240);P('R',200,160,0,{R:'10k'},'R1');P('OA',320,180,0,{},'U1');P('G',280,240);
+  P('R',320,100,0,{R:'100k'},'Rf');P('R',380,240,1,{R:'1k'},'RL');P('G',380,280);
+  W([100,160],[160,160]);W([240,160],[280,160]);W([280,200],[280,240]);W([260,160],[260,100],[280,100]);
+  W([360,100],[380,100],[380,180]);W([360,180],[380,180]);W([380,180],[380,200]);
+ }else if(name==='noninv'){
+  P('V',100,240,0,{V:'1'},'Vin');P('G',100,280);P('OA',300,180,0,{},'U1');P('R',200,160,0,{R:'10k'},'R1');P('G',160,160);P('R',300,100,0,{R:'10k'},'Rf');
+  W([100,200],[260,200]);W([240,160],[260,160]);W([240,160],[240,100],[260,100]);W([340,100],[360,100],[360,180],[340,180]);
+ }else if(name==='div'){
+  P('V',100,200,0,{V:'12'},'V1');P('G',100,240);P('AM',200,160,0,{},'AM1');P('R',240,200,1,{R:'1k'},'R1');P('R',240,280,1,{R:'2k'},'R2');P('G',240,320);P('VM',380,280,1,{},'VM1');
+  W([100,160],[160,160]);W([240,240],[380,240]);W([380,320],[240,320]);
+ }else if(name==='sum'){
+  P('V',100,140,0,{V:'1'},'V1');P('G',100,180);P('V',180,200,0,{V:'0.5'},'V2');P('G',180,240);P('R',240,100,0,{R:'10k'},'R1');P('R',240,160,0,{R:'10k'},'R2');
+  P('OA',360,180,0,{},'U1');P('G',320,240);P('R',360,60,0,{R:'10k'},'Rf');
+  W([100,100],[200,100]);W([180,160],[200,160]);W([280,100],[300,100],[300,160]);W([280,160],[320,160]);W([320,200],[320,240]);W([300,100],[300,60],[320,60]);W([400,60],[420,60],[420,180],[400,180]);
+ }else if(name==='follow'){
+  P('V',100,240,0,{V:'3.3'},'Vin');P('G',100,280);P('OA',260,180,0,{},'U1');P('R',360,220,1,{R:'470'},'RL');P('G',360,260);
+  W([100,200],[220,200]);W([220,160],[200,160],[200,100],[320,100],[320,180]);W([300,180],[360,180]);
+ }
+ st=prev;return s;
+}
+const EXAMPLES=[['inv',['מגבר מהפך','Inverting amplifier']],['noninv',['מגבר לא מהפך','Non-inverting amplifier']],['follow',['עוקב מתח','Voltage follower']],['sum',['מגבר מחבר','Summing amplifier']],['div',['מחלק מתח + מדים','Voltage divider + meters']]];
+
+/* ---------- persistence ---------- */
+function save(){try{localStorage.setItem('cl_state',JSON.stringify(st));}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('cl_state')||'null');if(s&&Array.isArray(s.parts)&&Array.isArray(s.wires)){s.parts=s.parts.filter(p=>TYPES[p.type]);s.parts.forEach(p=>p.props=Object.assign(defProps(p.type),p.props||{}));return s;}}catch(e){}return null;}
+function snapshot(){hist.push(JSON.stringify(st));if(hist.length>150)hist.shift();redoS=[];}
+function undo(){if(!hist.length)return;redoS.push(JSON.stringify(st));st=JSON.parse(hist.pop());sel=null;changed();}
+function redo(){if(!redoS.length)return;hist.push(JSON.stringify(st));st=JSON.parse(redoS.pop());sel=null;changed();}
+function resolve(){R=solve(st);refreshDiag();}
+function changed(full){resolve();save();render();renderSide();}
+
+/* ================= rendering ================= */
+function labelGeom(p){
+ const b=TYPES[p.type].box,odd=(p.rot||0)%2!==0,hw=odd?b[1]:b[0],hh=odd?b[0]:b[1];
+ if(hw>=hh)return {x:p.x,y:p.y-hh-7,x2:p.x,y2:p.y+hh+15,a:'middle'};
+ return {x:p.x+hw+7,y:p.y-3,x2:p.x+hw+7,y2:p.y+12,a:'start'};
+}
+function partValText(p){
+ const t=TYPES[p.type];if(!t.props.length)return '';
+ const [k,,u]=t.props[0];const v=parseVal(p.props[k]);
+ if(p.type==='OA')return '';
+ return isFinite(v)?eng(v,u,3):String(p.props[k]);
+}
+function partResText(p,r){
+ if(!r)return null;
+ switch(p.type){
+  case 'R':return {t:eng(r.I,'A',3)+' · '+eng(r.P,'W',3),w:r.over};
+  case 'V':return {t:eng(r.I,'A',3)};
+  case 'I':return {t:eng(r.V,'V',3)};
+  case 'OA':return {t:'Vo '+eng(r.Vout,'V',3)+(r.sat?' ⚠':''),w:!!r.sat};
+  case 'C':return {t:eng(r.V,'V',3)};
+  case 'L':case 'AM':return {t:eng(r.I,'A',4)};
+  case 'VM':return {t:eng(r.V,'V',4)};
+ }
+ return null;
+}
+function schematicMarkup(o){
+ const net=R?R.net:buildNets(st);let h='';
+ for(const w of st.wires){
+  const pts=w.pts.map(p=>p.join(',')).join(' ');
+  const isSel=sel&&sel.kind==='wire'&&sel.id===w.id;
+  h+=`<polyline class="wire${isSel?' sel':''}" points="${pts}"/>`;
+  if(!o.exp)h+=`<polyline class="whit" data-wire="${w.id}" points="${pts}"/>`;
+ }
+ for(const [x,y] of net.junctions)h+=`<circle class="jn" cx="${x}" cy="${y}" r="3.6"/>`;
+ for(const p of st.parts){
+  const isSel=sel&&sel.kind==='part'&&sel.id===p.id;
+  const glow=!o.exp&&(running||(focusDiag!=null&&DIAG[focusDiag]&&(DIAG[focusDiag].parts||[]).includes(p.id)))&&diagParts.has(p.id)&&diagParts.get(p.id)!=='info';
+  h+=`<g class="part${isSel?' psel':''}${glow?' glow':''}"><g transform="translate(${p.x},${p.y})">${symMarkup(p.type,p.rot)}</g>`;
+  if(!o.exp){const b=TYPES[p.type].box,odd=(p.rot||0)%2!==0,hw=(odd?b[1]:b[0])+4,hh=(odd?b[0]:b[1])+6;
+   h+=`<rect class="hit" data-part="${p.id}" x="${p.x-hw}" y="${p.y-hh}" width="${hw*2}" height="${hh*2}"/>`;}
+  if(p.type!=='G'){
+   const g=labelGeom(p),vt=partValText(p);
+   h+=`<text class="lbl" x="${g.x}" y="${g.y}" text-anchor="${g.a}">${esc(p.name)}${vt?'  '+esc(vt):''}</text>`;
+   if(o.vals&&R&&R.ok){const rt=partResText(p,R.res[p.id]);if(rt)h+=`<text class="res${rt.w?' w':''}" x="${g.x2}" y="${g.y2}" text-anchor="${g.a}">${esc(rt.t)}</text>`;}
+  }
+  h+='</g>';
+ }
+ if(!o.exp&&running)h+=flowMarkup();
+ if(!o.exp){
+  for(const p of st.parts)pinsAbs(p).forEach(([x,y],i)=>{h+=`<circle class="pin" data-pin="${x},${y}" cx="${x}" cy="${y}" r="2.6"/>`;});
+  for(const [x,y] of net.dangling)h+=`<circle class="pin dang" cx="${x}" cy="${y}" r="4"/>`;
+ }
+ if(o.vals&&R&&R.ok){
+  for(let i=1;i<net.nodes.length;i++){const nd=net.nodes[i];if(nd.x==null)continue;
+   const t=nd.name+' '+eng(R.nodeV[i],'V',3),w=t.length*6.4+8;
+   h+=`<g class="ntag"><rect x="${nd.x+5}" y="${nd.y-19}" width="${w}" height="14" rx="4"/><text x="${nd.x+9}" y="${nd.y-8.5}">${esc(t)}</text></g>`;}
+ }
+ return h;
+}
+function render(){
+ gSch.innerHTML=schematicMarkup({vals:showVals});
+ renderOverlay();applyView();updateToolbar();
+}
+function renderOverlay(){
+ let h='';
+ if(dropSeg)h+=`<line class="dropseg" x1="${dropSeg[0]}" y1="${dropSeg[1]}" x2="${dropSeg[2]}" y2="${dropSeg[3]}"/>`;
+ if(mode==='wire'){
+  if(hoverPt)h+=`<circle class="cur" cx="${hoverPt[0]}" cy="${hoverPt[1]}" r="7"/>`;
+  if(wireStart){h+=`<circle class="cur" cx="${wireStart[0]}" cy="${wireStart[1]}" r="5"/>`;
+   if(hoverPt){const r=route(wireStart,hoverPt);h+=`<polyline class="prev" points="${r.map(p=>p.join(',')).join(' ')}"/>`;}}
+ }
+ gOv.innerHTML=h;
+}
+function applyView(){gView.setAttribute('transform',`translate(${view.x},${view.y}) scale(${view.s})`);}
+function updateToolbar(){
+ $('bSel').classList.toggle('on',mode==='select');$('bWire').classList.toggle('on',mode==='wire');
+ $('bRot').disabled=!(sel&&sel.kind==='part');$('bDel').disabled=!sel;
+ $('bUndo').disabled=!hist.length;$('bRedo').disabled=!redoS.length;
+ $('bVals').classList.toggle('on',showVals);
+ const bp=$('bPlay');bp.classList.toggle('on',running);bp.textContent=running?'⏸ '+L('עצור','Stop'):'▶ '+L('הפעל','Play');
+ const b=$('badge');
+ const ne=DIAG.filter(d=>d.sev==='err').length,nw=DIAG.filter(d=>d.sev==='warn').length;
+ if(ne+nw){b.style.display='';b.textContent=(ne?'⛔ ':'⚠ ')+(ne+nw);b.style.color=ne?'var(--red)':'var(--gold)';}
+ else b.style.display='none';
+ $('hint').textContent=hintText();
+}
+function hintText(){
+ if(mode==='wire')return wireStart?L('הקש על נקודת הסיום של החוט (הקשה על אותה נקודה – סיום)','Tap the wire end point (tap the same point to finish)'):L('מצב חוט: הקש על הדק או נקודה ברשת כדי להתחיל חוט','Wire mode: tap a pin or grid point to start');
+ if(!st.parts.length)return L('גרור רכיב מהסרגל אל הקנבס, או הקש עליו','Drag a part from the palette, or tap it');
+ if(sel&&sel.kind==='wire')return L('חוט נבחר — הקש על רכיב בסרגל כדי להכניס אותו לחוט בטור','Wire selected — tap a palette part to insert it in series');
+ return '';
+}
+
+/* ================= side panel ================= */
+function renderSide(){
+ document.querySelectorAll('.tabs [data-tab]').forEach(b=>{b.classList.toggle('on',b.dataset.tab===tab);const nb=DIAG.filter(d=>d.sev!=='info').length;b.textContent={part:L('רכיב','Part'),tbl:L('טבלה','Table'),diag:L('תקלות','Faults')+(nb?` (${nb})`:''),res:L('תוצאות','Results'),calc:L('חישוב','Math')}[b.dataset.tab];});
+ const pane=$('pane');
+ if(tab==='part')pane.innerHTML=partPane();
+ else if(tab==='res')pane.innerHTML=resPane();
+ else if(tab==='tbl')pane.innerHTML=tblPane();
+ else if(tab==='diag')pane.innerHTML=diagPane();
+ else pane.innerHTML=`<div class="row"><button id="cpCalc">📋 ${L('העתק טקסט','Copy text')}</button></div><pre class="calc">${esc(calcText())}</pre>`;
+ bindPane();
+}
+function msgsHTML(){
+ if(!R||!DIAG.length)return '';let h='';
+ DIAG.forEach(d=>h+=`<div class="msg ${d.sev==='info'?'ok':d.sev}">${SEVI[d.sev]} ${esc(d.t)}</div>`);
+ return h+`<div class="row"><button data-gotodiag="1">🔎 ${L('למה ואיך מתקנים','Why & how to fix')}</button></div>`;
+}
+function updateTabLabels(){document.querySelectorAll('.tabs [data-tab]').forEach(b=>{if(b.dataset.tab==='diag'){const nb=DIAG.filter(d=>d.sev!=='info').length;b.textContent=L('תקלות','Faults')+(nb?` (${nb})`:'');}});}
+function partPane(){
+ if(!sel)return msgsHTML()+`<h3>${L('איך משתמשים','How to use')}</h3><ul class="help">${L(
+  `<li><b>הוספה:</b> גרור רכיב מהסרגל לקנבס, או הקש עליו.</li><li><b>הכנסה לחוט:</b> שחרר רכיב על חוט, או בחר חוט והקש על רכיב — הוא ייכנס בטור, ורכיבים באותו קו יתרווחו אוטומטית.</li><li><b>חוטים:</b> מצב "חוט", הקשה בנקודת התחלה והקשה בנקודת סיום. הקשה על הדק במצב בחירה מתחילה חוט ממנו.</li><li><b>הזזה:</b> גרור רכיב (החוטים נמתחים איתו). גרירה על רקע ריק מזיזה את התצוגה, שתי אצבעות לזום.</li><li><b>ערכים:</b> בחר רכיב והקלד ערך — אפשר <b>4.7k</b>, <b>100m</b>, <b>2.2u</b>, <b>1meg</b>.</li><li><b>▶ הפעל:</b> מריץ את המעגל — נקודות זורמות מראות את כיוון הזרם, ורכיב תקול זוהר באדום. הסבר ותיקון בלשונית "תקלות".</li><li><b>✨ סדר מעגל:</b> מיישר קווים, משווה מרווחים ומנתב מחדש את החוטים — בלי לשנות חיבורים.</li><li><b>טבלה:</b> כל הרכיבים וכל הערכים במקום אחד, לעריכה.</li><li><b>מקלדת:</b> רווח הפעלה · T סידור · R סיבוב · Delete מחיקה · W חוט · Esc ביטול · Ctrl+Z.</li>`,
+  `<li><b>Add:</b> drag a part from the palette, or tap it.</li><li><b>Insert into a wire:</b> drop a part on a wire, or select a wire and tap a part — it goes in series and parts on that line space out automatically.</li><li><b>Wires:</b> Wire mode, tap start then end. Tapping a pin in select mode starts a wire there.</li><li><b>Move:</b> drag a part (wires stretch). Drag empty space to pan, pinch to zoom.</li><li><b>Values:</b> select a part and type — <b>4.7k</b>, <b>100m</b>, <b>2.2u</b>, <b>1meg</b>.</li><li><b>▶ Play:</b> runs the circuit — flowing dots show current direction and faulty parts glow red. Explanations and fixes in the "Faults" tab.</li><li><b>✨ Tidy:</b> straightens lines, evens spacing and re-routes wires without changing connections.</li><li><b>Table:</b> every part and value in one editable list.</li><li><b>Keys:</b> Space play · T tidy · R rotate · Delete · W wire · Esc · Ctrl+Z.</li>`)}</ul>`;
+ if(sel.kind==='wire')return `<h3>${L('חוט','Wire')}</h3><p style="color:var(--muted);font-size:13px">${L('הקש על רכיב בסרגל כדי להכניס אותו לחוט הזה.','Tap a palette part to insert it into this wire.')}</p><div class="row"><button data-act="del">🗑 ${L('מחק','Delete')}</button></div>`;
+ const p=getPart(sel.id);if(!p)return '';
+ let h=`<h3>${esc(tn(p.type))}</h3>`;
+ if(p.type!=='G')h+=`<div class="fld"><label>${L('שם','Name')}</label><input data-name value="${esc(p.name)}"><span></span></div>`;
+ for(const [k,,u] of TYPES[p.type].props){const bad=!isFinite(parseVal(p.props[k]));
+  h+=`<div class="fld"><label>${esc(pn(k))}</label><input data-prop="${k}" value="${esc(p.props[k])}" class="${bad?'bad':''}" inputmode="text" autocomplete="off" spellcheck="false"><span>${u}</span></div>`;}
+ h+=`<div class="row"><button data-act="rot">⟳ ${L('סובב','Rotate')}</button><button data-act="dup">⧉ ${L('שכפל','Duplicate')}</button><button data-act="del">🗑 ${L('מחק','Delete')}</button></div>`;
+ h+=`<div id="partRes">${partResHTML(p)}</div>`;
+ return h;
+}
+function partResHTML(p){
+ if(!R)return '';
+ if(!R.ok)return msgsHTML();
+ const r=R.res[p.id];if(!r)return '';
+ const nn=i=>R.net.nodes[i]?R.net.nodes[i].name:'?';
+ const rows=[];const add=(k,v)=>rows.push(`<div>${k}</div><div>${v}</div>`);
+ switch(p.type){
+  case 'R':add(L('צמתים','Nodes'),`${nn(r.nodes[0])} → ${nn(r.nodes[1])}`);add(L('מתח','Voltage'),eng(r.V,'V'));add(L('זרם','Current'),eng(r.I,'A'));add(L('הספק','Power'),eng(r.P,'W')+(r.over?' ⚠':' ✓'));break;
+  case 'V':add('+ / −',`${nn(r.nodes[0])} / ${nn(r.nodes[1])}`);add(L('זרם יוצא מ-+','Current out of +'),eng(r.I,'A'));add(L('הספק מסופק','Power delivered'),eng(r.P,'W'));break;
+  case 'I':add(L('מתח על המקור','Voltage across'),eng(r.V,'V'));add(L('הספק מסופק','Power delivered'),eng(r.P,'W'));break;
+  case 'OA':add('V+',eng(r.Vp,'V'));add('V−',eng(r.Vm,'V'));add('V+ − V−',eng(r.Vd,'V'));add('Vout',eng(r.Vout,'V'));add(L('זרם מוצא','Output current'),eng(r.Iout,'A'));add(L('מצב','State'),r.sat?L('רווי ⚠','Saturated ⚠'):L('לינארי ✓','Linear ✓'));break;
+  case 'C':add(L('מתח','Voltage'),eng(r.V,'V'));add(L('מטען','Charge'),eng(r.Q,'C'));add(L('אנרגיה','Energy'),eng(r.E,'J'));add(L('זרם DC','DC current'),'0 A');break;
+  case 'L':add(L('זרם','Current'),eng(r.I,'A'));add(L('אנרגיה','Energy'),eng(r.E,'J'));add(L('מתח DC','DC voltage'),'0 V');break;
+  case 'AM':add(L('זרם','Current'),eng(r.I,'A'));break;
+  case 'VM':add(L('מתח','Voltage'),eng(r.V,'V'));break;
+  case 'G':add(L('צומת','Node'),'GND = 0 V');break;
+ }
+ const lines=partCalc(p).join('\n');
+ return `<h4>${L('תוצאה','Result')}</h4><div class="kv">${rows.join('')}</div>`+(lines?`<h4>${L('החישוב','The math')}</h4><pre class="calc">${esc(lines)}</pre>`:'');
+}
+function resultsRows(){
+ const nn=i=>R.net.nodes[i]?R.net.nodes[i].name:'?';
+ return st.parts.filter(p=>p.type!=='G').map(rowObj);
+}
+function rowObj(p){const r=R.res[p.id]||{};let v='',i='',pw='',note='';
+  switch(p.type){
+   case 'R':v=r.V;i=r.I;pw=r.P;note=r.over?L('חורג!','Over!'):'';break;
+   case 'V':v=r.vals.V;i=r.I;pw=r.P;note=L('מסופק','delivered');break;
+   case 'I':v=r.V;i=r.I;pw=r.P;note=L('מסופק','delivered');break;
+   case 'OA':v=r.Vout;i=r.Iout;pw=r.P;note=r.sat?L('רוויה','saturated'):'';break;
+   case 'C':v=r.V;i=0;note=r.over?L('מעל דירוג','Over rating'):'';break;case 'L':v=0;i=r.I;note=r.over?L('מעל דירוג','Over rating'):'';break;case 'AM':i=r.I;break;case 'VM':v=r.V;break;
+  }
+  return {name:p.name,type:tn(p.type),val:partValText(p),nodes:r.nodes?r.nodes.map(nn).join(' – '):'',V:v===''?'':eng(v,'V'),I:i===''?'':eng(i,'A'),P:pw===''?'':eng(pw,'W'),note};
+}
+function resPane(){
+ let h=msgsHTML();
+ if(!R||!R.ok){if(R&&R.empty)h+=`<p style="color:var(--muted)">${L('אין עדיין רכיבים.','No parts yet.')}</p>`;return h;}
+ if(!R.errs.length&&!R.warns.length)h+=`<div class="msg ok">✓ ${L('המעגל נפתר ללא אזהרות','Solved with no warnings')}</div>`;
+ h+=`<h4>${L('רכיבים','Parts')}</h4><table><tr><th>${L('רכיב','Part')}</th><th>${L('ערך','Value')}</th><th>V</th><th>I</th><th>P</th></tr>`;
+ for(const r of resultsRows())h+=`<tr><td>${esc(r.name)}<br><small style="color:var(--muted)">${esc(r.nodes)}</small></td><td class="num">${esc(r.val)}</td><td class="num">${r.V}</td><td class="num">${r.I}</td><td class="num">${r.P}${r.note?`<br><small style="color:var(--gold)">${esc(r.note)}</small>`:''}</td></tr>`;
+ h+=`</table><h4>${L('מתחי צמתים (ביחס לאדמה)','Node voltages (vs ground)')}</h4><table>`;
+ for(let i=1;i<R.net.nodes.length;i++)h+=`<tr><td>${R.net.nodes[i].name}</td><td class="num">${eng(R.nodeV[i],'V')}</td></tr>`;
+ h+=`</table><h4>${L('מאזן הספקים','Power balance')}</h4><div class="kv"><div>${L('מסופק (מקורות + מגברים)','Delivered (sources + op-amps)')}</div><div>${eng(R.Pdel,'W')}</div><div>${L('נצרך בנגדים','Dissipated in resistors')}</div><div>${eng(R.Pabs,'W')}</div></div>`;
+ return h;
+}
+function nn(i){return R&&R.net.nodes[i]?R.net.nodes[i].name:'?';}
+function vn(i){return 'V('+nn(i)+')';}
+function partCalc(p){
+ if(!R||!R.ok)return [];const r=R.res[p.id];if(!r)return [];const v=r.vals,o=[];
+ switch(p.type){
+  case 'R':
+   o.push(`${p.name} = ${eng(v.R,'Ω')}   [${nn(r.nodes[0])} → ${nn(r.nodes[1])}]`);
+   o.push(`  I = (${vn(r.nodes[0])} − ${vn(r.nodes[1])}) / R = (${eng(r.Va,'V')} − ${eng(r.Vb,'V')}) / ${eng(v.R,'Ω')} = ${eng(r.I,'A')}`);
+   o.push(`  P = I²·R = (${eng(r.I,'A')})² · ${eng(v.R,'Ω')} = ${eng(r.P,'W')}`+(isFinite(v.Pmax)&&v.Pmax>0?(r.over?L(`   ⚠ מעל ${eng(v.Pmax,'W')}!`,`   ⚠ above ${eng(v.Pmax,'W')}!`):L(`   ✓ מתחת ל-${eng(v.Pmax,'W')}`,`   ✓ below ${eng(v.Pmax,'W')}`)):''));
+   break;
+  case 'V':
+   o.push(`${p.name} = ${eng(v.V,'V')}   [+ ${nn(r.nodes[0])}, − ${nn(r.nodes[1])}]`);
+   o.push(L(`  זרם יוצא מהדק +: I = ${eng(r.I,'A')}`,`  Current out of +: I = ${eng(r.I,'A')}`));
+   o.push(L(`  הספק מסופק: P = V·I = ${eng(v.V,'V')} · ${eng(r.I,'A')} = ${eng(r.P,'W')}`,`  Power delivered: P = V·I = ${eng(v.V,'V')} · ${eng(r.I,'A')} = ${eng(r.P,'W')}`));
+   break;
+  case 'I':
+   o.push(`${p.name} = ${eng(v.I,'A')}   [${L('יוצא אל','out to')} ${nn(r.nodes[0])}]`);
+   o.push(`  V = ${vn(r.nodes[0])} − ${vn(r.nodes[1])} = ${eng(r.V,'V')}`);
+   o.push(L(`  הספק מסופק: P = V·I = ${eng(r.P,'W')}`,`  Power delivered: P = V·I = ${eng(r.P,'W')}`));
+   break;
+  case 'OA':
+   o.push(`${p.name} ${L('מגבר שרת','op-amp')}  (A = ${eng(v.A,'',3)}, ±${eng(v.Vsat,'V')})`);
+   o.push(`  V+ = ${vn(r.nodes[1])} = ${eng(r.Vp,'V')},   V− = ${vn(r.nodes[0])} = ${eng(r.Vm,'V')}`);
+   o.push(`  Vd = V+ − V− = ${eng(r.Vd,'V')}`);
+   if(r.sat)o.push(L(`  A·Vd = ${eng(v.A*r.Vd,'V')} → מעבר לטווח, המוצא נתקע ב-${eng(r.Vout,'V')} ⚠`,`  A·Vd = ${eng(v.A*r.Vd,'V')} → out of range, output stuck at ${eng(r.Vout,'V')} ⚠`));
+   else{o.push(`  Vout = A·Vd = ${eng(r.Vout,'V')}   ✓ ${L('בטווח','in range')}`);o.push(L(`  (קצר מדומה: V+ ≈ V− כי A גדול מאוד)`,`  (virtual short: V+ ≈ V− because A is huge)`));}
+   o.push(L(`  זרם מוצא: Iout = ${eng(r.Iout,'A')},  P = Vout·Iout = ${eng(r.P,'W')}`,`  Output current: Iout = ${eng(r.Iout,'A')},  P = Vout·Iout = ${eng(r.P,'W')}`));
+   break;
+  case 'C':
+   o.push(`${p.name} = ${eng(v.C,'F')}   ${L('(ב-DC: נתק)','(open in DC)')}`);
+   o.push(`  V = ${eng(r.V,'V')},  Q = C·V = ${eng(r.Q,'C')},  E = ½·C·V² = ${eng(r.E,'J')}`);break;
+  case 'L':
+   o.push(`${p.name} = ${eng(v.L,'H')}   ${L('(ב-DC: קצר)','(short in DC)')}`);
+   o.push(`  I = ${eng(r.I,'A')},  E = ½·L·I² = ${eng(r.E,'J')}`);break;
+  case 'AM':o.push(`${p.name}: I = ${eng(r.I,'A')}   [${nn(r.nodes[0])} → ${nn(r.nodes[1])}]`);break;
+  case 'VM':o.push(`${p.name}: V = ${vn(r.nodes[0])} − ${vn(r.nodes[1])} = ${eng(r.Va,'V')} − ${eng(r.Vb,'V')} = ${eng(r.V,'V')}`);break;
+ }
+ return o;
+}
+function calcText(){
+ if(!R)return '';
+ if(!R.ok)return R.empty?L('אין רכיבים.','No parts.'):[...R.errs,...R.warns].map(msgText).join('\n');
+ const o=[];
+ o.push(L('=== מעבדת מעגלים — ניתוח DC ===','=== Circuit Lab — DC analysis ==='));
+ o.push(L('שיטה: ניתוח צמתים (MNA). מגבר שרת: Vout = A·(V+ − V−) עם רוויה ב-±Vsat.','Method: modified nodal analysis (MNA). Op-amp: Vout = A·(V+ − V−), clamped at ±Vsat.'));
+ o.push('');o.push(L('מתחי צמתים:','Node voltages:'));
+ for(let i=1;i<R.net.nodes.length;i++)o.push(`  ${R.net.nodes[i].name} = ${eng(R.nodeV[i],'V')}`);
+ o.push('');o.push(L('רכיבים:','Parts:'));
+ for(const p of st.parts){if(p.type==='G')continue;o.push(...partCalc(p));o.push('');}
+ o.push(L('בדיקת חוק הזרמים של קירכהוף (סכום הזרמים היוצאים מכל צומת = 0):','Kirchhoff current law check (sum of currents leaving each node = 0):'));
+ const terms={};
+ for(const p of st.parts){const pi=R.pinI[p.id]||[];(R.res[p.id]||{}).nodes&&R.res[p.id].nodes.forEach((n,i)=>{if(n>0&&Math.abs(pi[i]||0)>1e-15)(terms[n]=terms[n]||[]).push([p.name,pi[i]]);});}
+ for(let i=1;i<R.net.nodes.length;i++){const t=terms[i]||[];if(!t.length)continue;const s=t.reduce((a,b)=>a+b[1],0);
+  o.push(`  ${R.net.nodes[i].name}: `+t.map(([n,v],j)=>(v<0?'− ':(j?'+ ':''))+eng(Math.abs(v),'A',3)+` (${n})`).join(' ')+` = ${eng(Math.abs(s)<1e-9?0:s,'A')} ${Math.abs(s)<1e-9?'✓':''}`);}
+ o.push('');o.push(L('מאזן הספקים:','Power balance:'));
+ o.push(L(`  מסופק ע״י מקורות ומגברים: ${eng(R.Pdel,'W')}`,`  Delivered by sources and op-amps: ${eng(R.Pdel,'W')}`));
+ o.push(L(`  נצרך בנגדים: ${eng(R.Pabs,'W')}`,`  Dissipated in resistors: ${eng(R.Pabs,'W')}`));
+ const ms=[...R.warns].map(msgText);if(ms.length){o.push('');o.push(L('אזהרות:','Warnings:'));ms.forEach(m=>o.push('  ⚠ '+m));}
+ return o.join('\n');
+}
+function bindPane(){
+ const pane=$('pane');
+ pane.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='del')delSel();else if(a==='rot')rotSel();else if(a==='dup')dupSel();});
+ const cp=$('cpCalc');if(cp)cp.onclick=()=>copyText(calcText()).then(()=>toast(L('הועתק','Copied')));
+ let snapTaken=false;
+ pane.querySelectorAll('tr[data-row]').forEach(tr=>tr.onclick=e=>{if(e.target.tagName==='INPUT')return;sel={kind:'part',id:tr.dataset.row};render();pane.querySelectorAll('tr[data-row]').forEach(t=>t.classList.toggle('rsel',t===tr));});
+ pane.querySelectorAll('input[data-pid]').forEach(inp=>inp.addEventListener('focus',()=>{sel={kind:'part',id:inp.dataset.pid};render();pane.querySelectorAll('tr[data-row]').forEach(t=>t.classList.toggle('rsel',t.dataset.row===inp.dataset.pid));}));
+ pane.querySelectorAll('[data-show]').forEach(b=>b.onclick=()=>{showDiag(+b.dataset.show);pane.querySelectorAll('.dcard').forEach(c=>c.classList.toggle('foc',c.dataset.di===b.dataset.show));});
+ pane.querySelectorAll('[data-fix]').forEach(b=>b.onclick=()=>{const [i,j]=b.dataset.fix.split(':').map(Number);applyFix(i,j);});
+ pane.querySelectorAll('[data-gotodiag]').forEach(b=>b.onclick=()=>{tab='diag';renderSide();});
+ pane.querySelectorAll('input[data-prop],input[data-name]').forEach(inp=>{
+  inp.onfocus=()=>{snapTaken=false;};
+  inp.oninput=()=>{const p=getPart(inp.dataset.pid||(sel&&sel.id));if(!p)return;if(!snapTaken){snapshot();snapTaken=true;}
+   if(inp.dataset.name!==undefined){p.name=inp.value.trim()||p.name;}
+   else{p.props[inp.dataset.prop]=inp.value;inp.classList.toggle('bad',!isFinite(parseVal(inp.value)));}
+   resolve();save();render();const pr=$('partRes');if(pr)pr.innerHTML=partResHTML(p);
+   st.parts.forEach(q=>{const c=$('tr_'+q.id);if(c)c.innerHTML=rowRes(q);});updateTabLabels();};
+ });
+}
+
+/* ================= editing ops ================= */
+function delSel(){
+ if(!sel)return;snapshot();
+ if(sel.kind==='part')st.parts=st.parts.filter(p=>p.id!==sel.id);else st.wires=st.wires.filter(w=>w.id!==sel.id);
+ sel=null;changed();
+}
+function rotSel(){
+ if(!sel||sel.kind!=='part')return;const p=getPart(sel.id);if(!p)return;snapshot();
+ const pins0=pinsAbs(p);p.rot=((p.rot||0)+1)%4;rubber(p,pins0,origWires());changed();
+}
+function dupSel(){
+ if(!sel||sel.kind!=='part')return;const p=getPart(sel.id);snapshot();
+ const q=mkPart(p.type,p.x+40,p.y+60,p.rot,Object.assign({},p.props));st.parts.push(q);sel={kind:'part',id:q.id};changed();
+}
+function route(a,b){if(a[0]===b[0]||a[1]===b[1])return [a.slice(),b.slice()];return [a.slice(),[b[0],a[1]],b.slice()];}
+function origWires(){const o={};st.wires.forEach(w=>o[w.id]=w.pts.map(q=>q.slice()));return o;}
+// move wire ends that were attached to the part's old pins
+function rubber(p,pins0,orig){
+ const pins1=pinsAbs(p);
+ for(const w of st.wires){
+  const op=orig[w.id];if(!op)continue;
+  const refs=[];
+  [0,op.length-1].forEach(end=>{pins0.forEach((pp,i)=>{if(op[end][0]===pp[0]&&op[end][1]===pp[1]&&!refs.some(r=>r.end===end))refs.push({end,i});});});
+  if(!refs.length)continue;
+  if(op.length===2&&refs.length===1&&(op[0][0]===op[1][0]&&op[0][1]===op[1][1]))continue;
+  let pts=op.map(q=>q.slice());
+  const horiz0=op.length>=2&&op[0][1]===op[1][1];
+  for(const rf of refs){
+   const old=op[rf.end],nw=pins1[rf.i];pts[rf.end]=nw.slice();
+   if(op.length>=3){const ni=rf.end===0?1:op.length-2;const nb=op[ni];
+    if(nb[1]===old[1]&&nb[0]!==old[0])pts[ni][1]=nw[1];else if(nb[0]===old[0])pts[ni][0]=nw[0];}
+  }
+  if(pts.length===2&&pts[0][0]!==pts[1][0]&&pts[0][1]!==pts[1][1]){
+   // keep orientation from the fixed end
+   const fixedEnd=refs.length===1?(refs[0].end===0?1:0):0;
+   const a=pts[fixedEnd],b=pts[1-fixedEnd];
+   const c=horiz0?[b[0],a[1]]:[a[0],b[1]];
+   pts=fixedEnd===0?[a,c,b]:[b,c,a];
+  }
+  // drop consecutive duplicates
+  w.pts=pts.filter((q,i)=>i===0||q[0]!==pts[i-1][0]||q[1]!==pts[i-1][1]);
+  if(w.pts.length<2)w.pts=[pts[0],pts[0].slice()];
+ }
+}
+/* ----- insert a two-terminal part into a wire, spacing parts on that line ----- */
+function findSegNear(wx,wy,tol){
+ let best=null;
+ for(const w of st.wires)for(let i=1;i<w.pts.length;i++){
+  const [x1,y1]=w.pts[i-1],[x2,y2]=w.pts[i];
+  if(x1!==x2&&y1!==y2)continue;
+  const len2=(x2-x1)**2+(y2-y1)**2;if(!len2)continue;
+  let t=((wx-x1)*(x2-x1)+(wy-y1)*(y2-y1))/len2;if(t<0||t>1)continue;
+  const px=x1+t*(x2-x1),py=y1+t*(y2-y1),d=Math.hypot(wx-px,wy-py);
+  if(d<=tol&&(!best||d<best.d))best={w:w.id,i,d,px,py,seg:[x1,y1,x2,y2]};
+ }
+ // also allow dropping onto a two-terminal part that sits on a straight line
+ for(const p of st.parts){const ps=pinsAbs(p);if(ps.length!==2||!TYPES[p.type].line)continue;
+  const [[x1,y1],[x2,y2]]=ps;const len2=(x2-x1)**2+(y2-y1)**2;
+  let t=((wx-x1)*(x2-x1)+(wy-y1)*(y2-y1))/len2;if(t<0||t>1)continue;
+  const px=x1+t*(x2-x1),py=y1+t*(y2-y1),d=Math.hypot(wx-px,wy-py);
+  if(d<=tol+10&&(!best||d<best.d))best={part:p.id,d,px,py,seg:[x1,y1,x2,y2]};}
+ return best;
+}
+function insertIntoWire(type,hit){
+ if(!TYPES[type].line)return false;
+ const [x1,y1,x2,y2]=hit.seg,hor=y1===y2;
+ const ax=hor?0:1,fix=hor?y1:x1; // ax: coordinate index varying along line
+ const on=pt=>pt[1-ax]===fix;
+ // explode wires that touch this line into single segments
+ const nw=[];
+ for(const w of st.wires){
+  const touches=w.pts.some((q,i)=>i>0&&on(q)&&on(w.pts[i-1]));
+  if(!touches||w.pts.length===2){nw.push(w);continue;}
+  for(let i=1;i<w.pts.length;i++)nw.push({id:nid('w'),pts:[w.pts[i-1].slice(),w.pts[i].slice()]});
+ }
+ st.wires=nw;
+ // line items
+ const items=[];
+ for(const w of st.wires){if(w.pts.length!==2)continue;const [a,b]=w.pts;if(on(a)&&on(b)&&(a[0]!==b[0]||a[1]!==b[1])){const t1=Math.min(a[ax],b[ax]),t2=Math.max(a[ax],b[ax]);items.push({kind:'w',id:w.id,t1,t2});}}
+ for(const p of st.parts){const ps=pinsAbs(p);if(ps.length===2&&on(ps[0])&&on(ps[1])){const t1=Math.min(ps[0][ax],ps[1][ax]),t2=Math.max(ps[0][ax],ps[1][ax]);if(t2>t1)items.push({kind:'p',id:p.id,t1,t2});}}
+ const net=buildNets(st);
+ const ptKey=t=>hor?K(t,fix):K(fix,t);
+ const tHit=hor?hit.px:hit.py;
+ let start=items.find(it=>it.kind==='w'&&it.t1<=tHit&&it.t2>=tHit)||items.find(it=>it.t1<=tHit&&it.t2>=tHit);
+ if(!start)return false;
+ const run=[start];
+ const conn=t=>net.deg[ptKey(t)]||0;
+ // extend low
+ let cur=start;
+ for(;;){const t=cur.t1;if(conn(t)!==2)break;const nx=items.find(it=>it!==cur&&it.t2===t&&!run.includes(it));if(!nx)break;run.unshift(nx);cur=nx;}
+ cur=start;
+ for(;;){const t=cur.t2;if(conn(t)!==2)break;const nx=items.find(it=>it!==cur&&it.t1===t&&!run.includes(it));if(!nx)break;run.push(nx);cur=nx;}
+ while(run.length&&run[0].kind==='p')run.shift();
+ while(run.length&&run[run.length-1].kind==='p')run.pop();
+ if(!run.length)return false;
+ const A=run[0].t1,B=run[run.length-1].t2;
+ const parts=run.filter(it=>it.kind==='p').map(it=>({p:getPart(it.id),c:(it.t1+it.t2)/2}));
+ const isV=TYPES[type].vert;
+ const np=mkPart(type,0,0,hor?(isV?1:0):(isV?0:1));
+ parts.push({p:np,c:tHit,isNew:true});
+ parts.sort((a,b)=>a.c-b.c);
+ const U=(B-A)/GRID,n=parts.length,free=U-4*n;
+ if(free<n+1){
+  st.wires=st.wires; // keep exploded (equivalent connectivity)
+  toast(L(`אין מספיק מקום על החוט — האריכו אותו בעוד ${(n+1-free)} משבצות`,`Not enough room on this wire — make it ${(n+1-free)} grid steps longer`));
+  return 'short';
+ }
+ // distribute free units into n+1 gaps (middle gaps get extras first)
+ const gaps=new Array(n+1).fill(Math.floor(free/(n+1)));let extra=free-gaps[0]*(n+1);
+ const order=[...Array(n+1).keys()].sort((a,b)=>Math.abs(a-n/2)-Math.abs(b-n/2));
+ for(let i=0;extra>0;i=(i+1)%(n+1),extra--)gaps[order[i]]++;
+ // remove run wires
+ const runW=new Set(run.filter(it=>it.kind==='w').map(it=>it.id));
+ st.wires=st.wires.filter(w=>!runW.has(w.id));
+ const P=t=>hor?[t,fix]:[fix,t];
+ let t=A;
+ for(let i=0;i<n;i++){
+  const g=gaps[i]*GRID;st.wires.push({id:nid('w'),pts:[P(t),P(t+g)]});t+=g;
+  const c=t+40,q=parts[i].p;q.x=hor?c:fix;q.y=hor?fix:c;t+=80;
+ }
+ st.wires.push({id:nid('w'),pts:[P(t),P(B)]});
+ st.parts.push(np);
+ return np;
+}
+function placePart(type,wx,wy,fromTap){
+ snapshot();
+ // insert into wire?
+ let hit=null;
+ if(fromTap&&sel&&sel.kind==='wire'){const w=getWire(sel.id);if(w&&TYPES[type].line){
+   let bi=-1,bl=-1;for(let i=1;i<w.pts.length;i++){const a=w.pts[i-1],b=w.pts[i];if(a[0]!==b[0]&&a[1]!==b[1])continue;const l=Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1]);if(l>bl){bl=l;bi=i;}}
+   if(bi>0){const a=w.pts[bi-1],b=w.pts[bi];hit={w:w.id,i:bi,px:(a[0]+b[0])/2,py:(a[1]+b[1])/2,seg:[a[0],a[1],b[0],b[1]]};}}}
+ else if(!fromTap&&TYPES[type].line)hit=findSegNear(wx,wy,12/view.s+4);
+ if(hit){const r=insertIntoWire(type,hit);
+  if(r&&r!=='short'){sel={kind:'part',id:r.id};changed();return;}
+  if(r==='short'){st=JSON.parse(hist.pop());render();return;}}
+ let x=Math.round(wx/GRID)*GRID,y=Math.round(wy/GRID)*GRID;
+ if(fromTap){while(st.parts.some(p=>Math.abs(p.x-x)<60&&Math.abs(p.y-y)<60))y+=80;}
+ const p=mkPart(type,x,y,0);st.parts.push(p);sel={kind:'part',id:p.id};
+ if(mode==='wire')setMode('select');
+ changed();
+}
+function setMode(m){mode=m;wireStart=null;hoverPt=null;renderOverlay();updateToolbar();}
+function wireTap(x,y){
+ if(!wireStart){wireStart=[x,y];renderOverlay();updateToolbar();return;}
+ if(wireStart[0]===x&&wireStart[1]===y){wireStart=null;renderOverlay();updateToolbar();return;}
+ const existed=(R?R.net:buildNets(st)).nodeAt(x,y)>=0||st.wires.some(w=>w.pts.some((q,i)=>i>0&&onSegInt(x,y,[w.pts[i-1][0],w.pts[i-1][1],q[0],q[1]])));
+ snapshot();st.wires.push({id:nid('w'),pts:route(wireStart,[x,y])});
+ wireStart=existed?null:[x,y];changed();
+}
+
+/* ================= pointer interaction ================= */
+const ptrs=new Map();let drag=null;
+function svgXY(e){const r=svg.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+function toWorld(sx,sy){return [(sx-view.x)/view.s,(sy-view.y)/view.s];}
+const snap=v=>Math.round(v/GRID)*GRID;
+svg.addEventListener('pointerdown',e=>{
+ if(e.button!==undefined&&e.button>0&&e.pointerType==='mouse'&&e.button!==1)return;
+ svg.setPointerCapture(e.pointerId);
+ const [sx,sy]=svgXY(e);ptrs.set(e.pointerId,{sx,sy});
+ if(ptrs.size===2){const [a,b]=[...ptrs.values()];const mx=(a.sx+b.sx)/2,my=(a.sy+b.sy)/2;
+  drag={type:'pinch',d0:Math.hypot(a.sx-b.sx,a.sy-b.sy)||1,s0:view.s,w0:toWorld(mx,my)};return;}
+ const tgt=e.target.closest?e.target.closest('[data-part],[data-wire],[data-pin]'):null;
+ const base={sx,sy,vx:view.x,vy:view.y,moved:false};
+ if(mode==='select'&&tgt&&tgt.dataset.pin){const [x,y]=tgt.dataset.pin.split(',').map(Number);setMode('wire');wireStart=[x,y];renderOverlay();updateToolbar();drag=Object.assign({type:'pan',noTap:true},base);return;}
+ if(mode==='select'&&tgt&&tgt.dataset.part){
+  const p=getPart(tgt.dataset.part);sel={kind:'part',id:p.id};const [wx,wy]=toWorld(sx,sy);
+  drag=Object.assign({type:'move',id:p.id,ox:wx-p.x,oy:wy-p.y,x0:p.x,y0:p.y,pins0:pinsAbs(p),orig:origWires()},base);
+  render();if(tab!=='tbl')tab='part';$('side').classList.remove('min');renderSide();return;}
+ if(mode==='select'&&tgt&&tgt.dataset.wire){sel={kind:'wire',id:tgt.dataset.wire};render();tab='part';renderSide();drag=Object.assign({type:'pan',noTap:true},base);return;}
+ drag=Object.assign({type:'pan',deselect:mode==='select'},base);
+});
+svg.addEventListener('pointermove',e=>{
+ const [sx,sy]=svgXY(e);
+ if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{sx,sy});
+ if(mode==='wire'&&e.pointerType!=='touch'){const [wx,wy]=toWorld(sx,sy);const h=[snap(wx),snap(wy)];if(!hoverPt||h[0]!==hoverPt[0]||h[1]!==hoverPt[1]){hoverPt=h;renderOverlay();}}
+ if(!drag)return;
+ if(drag.type==='pinch'&&ptrs.size>=2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.sx-b.sx,a.sy-b.sy);const mx=(a.sx+b.sx)/2,my=(a.sy+b.sy)/2;
+  view.s=Math.min(4,Math.max(0.25,drag.s0*d/drag.d0));view.x=mx-drag.w0[0]*view.s;view.y=my-drag.w0[1]*view.s;applyView();return;}
+ const dx=sx-drag.sx,dy=sy-drag.sy;
+ if(!drag.moved&&Math.hypot(dx,dy)>6)drag.moved=true;
+ if(!drag.moved)return;
+ if(drag.type==='pan'){view.x=drag.vx+dx;view.y=drag.vy+dy;applyView();}
+ else if(drag.type==='move'){
+  const p=getPart(drag.id);if(!p)return;const [wx,wy]=toWorld(sx,sy);
+  const nx=snap(wx-drag.ox),ny=snap(wy-drag.oy);
+  if(nx!==p.x||ny!==p.y){if(!drag.snap){snapshot();drag.snap=true;}p.x=nx;p.y=ny;rubber(p,drag.pins0,drag.orig);resolve();render();}
+ }
+});
+function endPtr(e){
+ ptrs.delete(e.pointerId);
+ if(!drag)return;
+ if(drag.type==='pinch'){if(ptrs.size===0)drag=null;else drag=null;return;}
+ const d=drag;drag=null;
+ if(d.type==='move'){if(d.snap)changed();return;}
+ if(d.type==='pan'&&!d.moved&&!d.noTap){
+  const [wx,wy]=toWorld(d.sx,d.sy);
+  if(mode==='wire'){wireTap(snap(wx),snap(wy));}
+  else if(d.deselect&&sel){sel=null;render();renderSide();}
+ }
+}
+svg.addEventListener('pointerup',endPtr);svg.addEventListener('pointercancel',endPtr);
+svg.addEventListener('wheel',e=>{e.preventDefault();const [sx,sy]=svgXY(e);zoomAt(sx,sy,Math.exp(-e.deltaY*0.0015));},{passive:false});
+function zoomAt(sx,sy,f){const w=toWorld(sx,sy);view.s=Math.min(4,Math.max(0.25,view.s*f));view.x=sx-w[0]*view.s;view.y=sy-w[1]*view.s;applyView();}
+function bbox(){
+ let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;const add=(x,y)=>{x1=Math.min(x1,x);y1=Math.min(y1,y);x2=Math.max(x2,x);y2=Math.max(y2,y);};
+ st.parts.forEach(p=>{const b=TYPES[p.type].box,o=(p.rot||0)%2,hw=o?b[1]:b[0],hh=o?b[0]:b[1];add(p.x-hw-60,p.y-hh-28);add(p.x+hw+80,p.y+hh+24);});
+ st.wires.forEach(w=>w.pts.forEach(([x,y])=>{add(x-10,y-24);add(x+110,y+10);}));
+ if(x1>x2)return [0,0,400,300];return [x1,y1,x2,y2];
+}
+function fit(){
+ const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
+ const [x1,y1,x2,y2]=bbox();const s=Math.min(2,Math.max(0.25,Math.min((r.width-20)/(x2-x1),(r.height-60)/(y2-y1))));
+ view.s=s;view.x=(r.width-(x2-x1)*s)/2-x1*s;view.y=(r.height-50-(y2-y1)*s)/2-y1*s;applyView();
+}
+
+/* ================= palette ================= */
+const PAL=['W','R','V','OA','G','I','C','L','AM','VM'];
+function buildPalette(){
+ const pal=$('pal');pal.innerHTML='';
+ for(const t of PAL){
+  const d=document.createElement('div');d.className='pi';d.dataset.t=t;
+  d.innerHTML=t==='W'?`<svg viewBox="-50 -42 100 84"><path d="M-40 10H0V-10H40" style="stroke:#5fb8e6;stroke-width:4;fill:none"/><circle cx="-40" cy="10" r="5" fill="#5fb8e6"/><circle cx="40" cy="-10" r="5" fill="#5fb8e6"/></svg><span>${L('חוט','Wire')}</span>`:`<svg viewBox="-50 -42 100 84">${symMarkup(t,t==='V'||t==='I'?1:0)}</svg><span>${esc(tn(t))}</span>`;
+  pal.appendChild(d);
+  d.addEventListener('pointerdown',palDown);
+ }
+}
+let pdrag=null;
+function palDown(e){
+ e.preventDefault();
+ pdrag={t:e.currentTarget.dataset.t,x:e.clientX,y:e.clientY,moved:false,id:e.pointerId};
+ window.addEventListener('pointermove',palMove);window.addEventListener('pointerup',palUp);window.addEventListener('pointercancel',palUp);
+}
+function palMove(e){
+ if(!pdrag||e.pointerId!==pdrag.id)return;
+ if(pdrag.t==='W')return;
+ if(!pdrag.moved&&Math.hypot(e.clientX-pdrag.x,e.clientY-pdrag.y)>8){pdrag.moved=true;const g=$('ghost');g.innerHTML=symMarkup(pdrag.t,0).replace('class="sym"','class="sym" style="stroke:#ffb020"');g.style.display='block';}
+ if(pdrag.moved){const g=$('ghost');g.style.left=(e.clientX-30)+'px';g.style.top=(e.clientY-17)+'px';
+  const r=svg.getBoundingClientRect();
+  if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom&&TYPES[pdrag.t].line){const [wx,wy]=toWorld(e.clientX-r.left,e.clientY-r.top);const h=findSegNear(wx,wy,12/view.s+4);dropSeg=h?h.seg:null;}else dropSeg=null;
+  renderOverlay();}
+}
+function palUp(e){
+ if(!pdrag||e.pointerId!==pdrag.id)return;
+ window.removeEventListener('pointermove',palMove);window.removeEventListener('pointerup',palUp);window.removeEventListener('pointercancel',palUp);
+ $('ghost').style.display='none';dropSeg=null;
+ const t=pdrag.t,moved=pdrag.moved;pdrag=null;
+ if(t==='W'){setMode(mode==='wire'?'select':'wire');toast(mode==='wire'?L('מצב חוט: הקש נקודת התחלה ואז נקודת סיום','Wire mode: tap start, then end'):L('חזרה למצב בחירה','Back to select'));return;}
+ const r=svg.getBoundingClientRect();
+ if(moved){
+  if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){const [wx,wy]=toWorld(e.clientX-r.left,e.clientY-r.top);placePart(t,wx,wy,false);}
+  else renderOverlay();
+ }else{const [wx,wy]=toWorld(r.width/2,r.height/2);placePart(t,wx,wy,true);}
+}
+
+/* ================= export ================= */
+function exportSVG(){
+ const [x1,y1,x2,y2]=bbox();const w=x2-x1,h=y2-y1;
+ const keepSel=sel;sel=null;const inner=schematicMarkup({vals:showVals,exp:true});sel=keepSel;
+ const css=`.wire{stroke:#1d4ed8;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}.sym{stroke:#111;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}.fillc{fill:#fff}.symt{fill:#111;stroke:none;font:600 12px Arial,sans-serif}.jn{fill:#1d4ed8}.lbl{fill:#5b21b6;font:600 12px Arial,sans-serif}.res{fill:#047857;font:500 11px Consolas,monospace}.res.w{fill:#b45309}.ntag rect{fill:#e0f2fe;stroke:#7dd3fc}.ntag text{fill:#075985;font:500 10.5px Consolas,monospace}`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x1} ${y1} ${w} ${h}" width="${Math.round(w)}" height="${Math.round(h)}" style="direction:ltr"><style>${css}</style><rect x="${x1}" y="${y1}" width="${w}" height="${h}" fill="#fff"/>${inner}</svg>`;
+}
+function svgToPng(str,scale){
+ return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(new Blob([str],{type:'image/svg+xml'}));
+  img.onload=()=>{const c=document.createElement('canvas');c.width=Math.ceil(img.width*scale);c.height=Math.ceil(img.height*scale);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>b?res(b):rej(new Error('png')),'image/png');};
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('img'));};img.src=url;});
+}
+const blobToDataURL=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});
+function tableHTML(){
+ if(!R||!R.ok)return `<p>${esc(calcText())}</p>`;
+ const th='style="border:1px solid #999;padding:4px 8px;background:#eef;text-align:left"',td='style="border:1px solid #999;padding:4px 8px"',tn_='style="border:1px solid #999;padding:4px 8px;text-align:right;font-family:Consolas,monospace;direction:ltr"';
+ let h=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;direction:${lang==='he'?'rtl':'ltr'}"><tr><th ${th}>${L('רכיב','Part')}</th><th ${th}>${L('צמתים','Nodes')}</th><th ${th}>${L('ערך','Value')}</th><th ${th}>V</th><th ${th}>I</th><th ${th}>P</th><th ${th}>${L('הערה','Note')}</th></tr>`;
+ for(const r of resultsRows())h+=`<tr><td ${td}>${esc(r.name)}</td><td ${td}>${esc(r.nodes)}</td><td ${tn_}>${esc(r.val)}</td><td ${tn_}>${r.V}</td><td ${tn_}>${r.I}</td><td ${tn_}>${r.P}</td><td ${td}>${esc(r.note)}</td></tr>`;
+ h+='</table><br><table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px">';
+ for(let i=1;i<R.net.nodes.length;i++)h+=`<tr><td ${td}>${R.net.nodes[i].name}</td><td ${tn_}>${eng(R.nodeV[i],'V')}</td></tr>`;
+ return h+'</table>';
+}
+function tablePlain(){
+ if(!R||!R.ok)return calcText();
+ const rows=resultsRows().map(r=>[r.name,r.nodes,r.val,r.V,r.I,r.P,r.note].join('\t'));
+ return [[L('רכיב','Part'),L('צמתים','Nodes'),L('ערך','Value'),'V','I','P',L('הערה','Note')].join('\t'),...rows,'',...R.net.nodes.slice(1).map((n,i)=>n.name+'\t'+eng(R.nodeV[i+1],'V'))].join('\n');
+}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+async function copyText(t){
+ try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+ const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();return true;
+}
+async function copyImgTable(){
+ const svgStr=exportSVG();const pngP=svgToPng(svgStr,2);
+ const htmlP=pngP.then(blobToDataURL).then(u=>new Blob([`<div><img src="${u}"><br>${tableHTML()}</div>`],{type:'text/html'}));
+ const plain=new Blob([tablePlain()],{type:'text/plain'});
+ try{await navigator.clipboard.write([new ClipboardItem({'image/png':pngP,'text/html':htmlP,'text/plain':plain})]);toast(L('השרטוט והטבלה הועתקו — הדבק ב-Word/מייל','Schematic + table copied — paste into Word/email'));return;}catch(e){}
+ try{await navigator.clipboard.write([new ClipboardItem({'text/html':htmlP,'text/plain':plain})]);toast(L('הועתק (שרטוט + טבלה)','Copied (schematic + table)'));return;}catch(e){}
+ try{await navigator.clipboard.write([new ClipboardItem({'image/png':pngP})]);toast(L('התמונה הועתקה (הדפדפן לא מאפשר טבלה יחד איתה)','Image copied (browser blocks the table with it)'));return;}catch(e){}
+ try{download(await pngP,'circuit.png');await copyText(tablePlain());toast(L('הדפדפן חסם העתקת תמונה — התמונה הורדה והטבלה הועתקה כטקסט','Image clipboard blocked — PNG downloaded, table copied as text'));}catch(e){toast(L('ההעתקה נכשלה','Copy failed'));}
+}
+function doPrint(){
+ const p=$('print');
+ p.innerHTML=`<h2 style="margin:0 0 10px">${L('מעבדת מעגלים — שרטוט וחישוב','Circuit Lab — schematic & calculation')}</h2>${exportSVG()}<br><br>${tableHTML()}<h3>${L('החישוב','Calculation')}</h3><pre dir="auto">${esc(calcText())}</pre>`;
+ p.setAttribute('dir',lang==='he'?'rtl':'ltr');
+ setTimeout(()=>window.print(),50);
+}
+function saveJSON(){download(new Blob([JSON.stringify({schema:'circuit-lab/1',parts:st.parts,wires:st.wires},null,1)],{type:'application/json'}),'circuit.json');}
+$('fileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.parts)||!Array.isArray(j.wires))throw 0;
+ j.parts.forEach(p=>{if(!TYPES[p.type])throw 0;p.props=Object.assign(defProps(p.type),p.props||{});p.id=p.id||nid('p');});
+ snapshot();st={parts:j.parts,wires:j.wires};sel=null;changed();fit();toast(L('המעגל נטען','Circuit loaded'));}catch(err){toast(L('קובץ לא תקין','Invalid file'));}e.target.value='';};
+
+/* ================= menus / toolbar ================= */
+function menu(anchor,items){
+ closeMenu();const m=document.createElement('div');m.className='menu';m.id='menu';
+ items.forEach(([label,fn])=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>{closeMenu();fn();};m.appendChild(b);});
+ document.body.appendChild(m);const r=anchor.getBoundingClientRect();
+ let left=lang==='he'?r.right-m.offsetWidth:r.left;left=Math.max(6,Math.min(left,innerWidth-m.offsetWidth-6));
+ m.style.left=left+'px';m.style.top=(r.bottom+4)+'px';
+ setTimeout(()=>document.addEventListener('pointerdown',outside),0);
+}
+function outside(e){const m=$('menu');if(m&&!m.contains(e.target))closeMenu();}
+function closeMenu(){const m=$('menu');if(m)m.remove();document.removeEventListener('pointerdown',outside);}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2600);}
+function applyLang(){
+ document.documentElement.lang=lang;document.documentElement.dir=lang==='he'?'rtl':'ltr';
+ $('bSel').textContent='↖ '+L('בחירה','Select');$('bWire').textContent='〰 '+L('חוט','Wire');
+ $('bRot').textContent='⟳ '+L('סובב','Rotate');$('bDel').textContent='🗑 '+L('מחק','Delete');
+ $('bEx').textContent='📚 '+L('דוגמאות','Examples');$('bNew').textContent='✚ '+L('חדש','New');
+ $('bExp').textContent='📤 '+L('העתק / ייצוא','Copy / Export');$('bVals').textContent='🔢 '+L('ערכים','Values');
+ $('bTidy').textContent='✨ '+L('סדר מעגל','Tidy');
+ $('bLang').textContent=lang==='he'?'EN':'עב';
+ document.querySelector('header h1').innerHTML=L('⚡ <b>מעבדת</b> מעגלים','⚡ <b>Circuit</b> Lab');
+ document.title=L('מעבדת מעגלים – Circuit Lab','Circuit Lab');
+ buildPalette();renderSide();updateToolbar();
+}
+$('bSel').onclick=()=>setMode('select');
+$('bWire').onclick=()=>setMode(mode==='wire'?'select':'wire');
+$('bRot').onclick=rotSel;$('bDel').onclick=delSel;$('bUndo').onclick=undo;$('bRedo').onclick=redo;
+$('bPlay').onclick=togglePlay;
+$('bTidy').onclick=tidy;
+$('bVals').onclick=()=>{showVals=!showVals;render();};
+$('bLang').onclick=()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('cl_lang',lang);}catch(e){}applyLang();render();};
+$('bNew').onclick=()=>{if(st.parts.length&&!confirm(L('למחוק את המעגל ולהתחיל מחדש?','Clear the circuit and start over?')))return;snapshot();st={parts:[],wires:[]};sel=null;changed();};
+$('bEx').onclick=e=>menu(e.currentTarget,EXAMPLES.map(([k,n])=>[L(n[0],n[1]),()=>{snapshot();st=ex(k);sel=null;changed();fit();}]));
+$('bExp').onclick=e=>menu(e.currentTarget,[
+ ['🖼 '+L('העתק שרטוט + טבלת ערכים','Copy schematic + values table'),copyImgTable],
+ ['📝 '+L('העתק טקסט עם נוסחאות','Copy text with formulas'),()=>copyText(calcText()).then(()=>toast(L('הטקסט הועתק','Text copied')))],
+ ['⬇ '+L('הורד SVG','Download SVG'),()=>download(new Blob([exportSVG()],{type:'image/svg+xml'}),'circuit.svg')],
+ ['⬇ '+L('הורד PNG','Download PNG'),()=>svgToPng(exportSVG(),2).then(b=>download(b,'circuit.png'))],
+ ['🖨 '+L('הדפס / שמור כ-PDF','Print / save as PDF'),doPrint],
+ ['💾 '+L('שמור מעגל (JSON)','Save circuit (JSON)'),saveJSON],
+ ['📂 '+L('טען מעגל (JSON)','Load circuit (JSON)'),()=>$('fileIn').click()],
+]);
+document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;$('side').classList.remove('min');renderSide();});
+$('sideMin').onclick=()=>{$('side').classList.toggle('min');$('sideMin').textContent=$('side').classList.contains('min')?'▴':'▾';};
+$('zIn').onclick=()=>{const r=svg.getBoundingClientRect();zoomAt(r.width/2,r.height/2,1.25);};
+$('zOut').onclick=()=>{const r=svg.getBoundingClientRect();zoomAt(r.width/2,r.height/2,0.8);};
+$('zFit').onclick=fit;
+$('badge').onclick=()=>{tab='diag';$('side').classList.remove('min');renderSide();};
+document.addEventListener('keydown',e=>{
+ if(e.target.tagName==='INPUT')return;
+ const k=e.key.toLowerCase();
+ if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}
+ if((e.ctrlKey||e.metaKey)&&k==='y'){e.preventDefault();redo();return;}
+ if((e.ctrlKey||e.metaKey)&&k==='d'){e.preventDefault();dupSel();return;}
+ if(k==='delete'||k==='backspace'){delSel();e.preventDefault();}
+ else if(k==='r'||k==='ר')rotSel();
+ else if(k==='w'||k==='ש')setMode(mode==='wire'?'select':'wire');
+ else if(k===' '){e.preventDefault();togglePlay();}
+ else if(k==='t'&&!e.ctrlKey&&!e.metaKey)tidy();
+ else if(k==='escape'){if(wireStart){wireStart=null;renderOverlay();updateToolbar();}else if(mode==='wire')setMode('select');else{sel=null;render();renderSide();}}
+});
+window.addEventListener('resize',()=>applyView());
+
+/* ================= helpers for values ================= */
+const E12=[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2];
+function e12(v,dir){ // dir: 1 = round up, -1 = round down, 0 nearest
+ if(!(v>0))return v;const d=Math.floor(Math.log10(v));let best=null;
+ for(let k=d-1;k<=d+1;k++)for(const m of E12){const c=+(m*Math.pow(10,k)).toPrecision(3);
+  if(dir>0&&c<v*0.9999)continue;if(dir<0&&c>v*1.0001)continue;
+  if(best===null||Math.abs(Math.log(c/v))<Math.abs(Math.log(best/v)))best=c;}
+ return best===null?v:best;
+}
+function stdUp(v,list){for(const c of list)if(c>=v)return c;return list[list.length-1]*Math.ceil(v/list[list.length-1]);}
+const PWR=[0.125,0.25,0.5,1,2,3,5,10,25,50,100];
+const CAPV=[6.3,10,16,25,35,50,63,100,160,250,400,630];
+const vs=v=>eng(v,'',3).replace(/\s+/g,'');
+
+/* ================= diagnostics ================= */
+let focusDiag=null,diagParts=new Map();
+function partsOnNode(n,net){return st.parts.filter(p=>net.partNodes[p.id].includes(n));}
+function idealOpampOut(opId){ // re-solve with this op-amp unclamped
+ const s2=JSON.parse(JSON.stringify(st));const p=s2.parts.find(q=>q.id===opId);p.props.Vsat='1e12';
+ const r=solve(s2);return r.ok?r.res[opId].Vout:null;
+}
+function diagnose(){
+ const D=[];if(!R)return D;
+ const net=R.net;
+ const add=d=>{d.id=d.id||('d'+D.length);D.push(d);};
+ const P=id=>getPart(id);
+ // --- structural: voltage-source loops / shorts (these make the math impossible)
+ if(st.parts.length&&net.hasGround){
+  const par={};const f=k=>{if(!(k in par))par[k]=k;while(par[k]!==k)k=par[k]=par[par[k]];return k;};
+  const adj={};const edge=(a,b,id)=>{(adj[a]=adj[a]||[]).push([b,id]);(adj[b]=adj[b]||[]).push([a,id]);};
+  const vparts=st.parts.filter(p=>VSRC[p.type]);
+  for(const p of vparts){
+   const nd=net.partNodes[p.id];const a=p.type==='OA'?nd[2]:nd[0],b=p.type==='OA'?0:nd[1];
+   if(a===b){
+    if(p.type==='OA')add({sev:'err',parts:[p.id],t:L(`מוצא ${p.name} מחובר ישירות לאדמה`,`${p.name} output tied straight to ground`),
+     why:L('מוצא של מגבר שרת מתנהג כמו מקור מתח: הוא "מכריח" מתח מסוים. אם מחברים אותו לאדמה בחוט, הוא צריך להכריח מתח אחר מ-0 על נקודה שחייבת להיות 0 — שתי דרישות סותרות, ובמציאות זרם קצר שיכול לשרוף את המגבר.','An op-amp output behaves like a voltage source: it forces a voltage. Wiring it to ground asks one point to be both that voltage and 0 V — a contradiction, and in real life a short-circuit current that can damage the chip.'),
+     fix:[L('הסר את החוט בין המוצא לאדמה.','Remove the wire from the output to ground.'),L('אם רצית עומס — שים נגד (למשל 1kΩ) בין המוצא לאדמה, לא חוט.','If you wanted a load, put a resistor (e.g. 1 kΩ) between output and ground, not a wire.')]});
+    else add({sev:'err',parts:[p.id],t:L(`${p.name} מקוצר — שני ההדקים שלו באותו צומת`,`${p.name} is shorted — both pins on one node`),
+     why:p.type==='V'?L('מקור מתח אידיאלי שומר הפרש מתחים קבוע בין ההדקים. חוט בין ההדקים מכריח הפרש 0. אין פתרון שמקיים את שניהם — ובמציאות זה זרם קצר עצום.','An ideal voltage source holds a fixed voltage between its pins. A wire across it forces 0 V. Both cannot be true — physically it is a huge short-circuit current.')
+       :L(`${tn(p.type)} מתנהג ב-DC כמו חוט. כששני ההדקים שלו כבר מחוברים בחוט אחר, אי אפשר לדעת כמה זרם עובר בכל אחד מהם — יש אינסוף פתרונות.`,`At DC a ${tn(p.type).toLowerCase()} is just a wire. With its pins already joined by another wire, the current split between them is undefined — infinitely many solutions.`),
+     fix:[L('בדוק אם יש חוט שעוקף את הרכיב ומחק אותו.','Look for a wire bypassing the part and delete it.'),p.type==='AM'?L('מד זרם מחברים תמיד בטור — לחתוך את המסלול ולהכניס אותו בתוך הפער.','An ammeter always goes in series — break the path and put it in the gap.'):L('הזז את הרכיב כך שכל הדק יתחבר לנקודה אחרת.','Move the part so each pin lands on a different point.')]});
+    continue;
+   }
+   if(f(a)===f(b)){
+    // find the loop path between a and b in the source graph
+    const prev={[a]:null},q=[a];
+    while(q.length){const u=q.shift();if(u==b)break;for(const [v,id] of adj[u]||[])if(!(v in prev)){prev[v]=[u,id];q.push(v);}}
+    const loop=[p.id];let u=b;while(prev[u]){loop.push(prev[u][1]);u=prev[u][0];}
+    const types=loop.map(id=>P(id).type),names=loop.map(id=>P(id).name).join(', ');
+    let t,why,fix,act=[];
+    if(types.includes('AM')&&types.includes('V')){const am=loop.find(id=>P(id).type==='AM');
+     t=L(`מד הזרם ${P(am).name} מחובר במקביל למקור`,`Ammeter ${P(am).name} is across a source`);
+     why=L('למד זרם יש התנגדות אפס — הוא בעצם חוט. כשמחברים אותו ישירות על מקור מתח, הוא מקצר אותו: לפי חוק אוהם I = V/0 → זרם אינסופי. במציאות המד או הנתיך נשרפים.','An ammeter has zero resistance — it is a wire. Placed straight across a voltage source it shorts it: Ohm\'s law gives I = V/0 → infinite current. In reality the meter or its fuse burns.');
+     fix=[L('מד זרם מחברים בטור: נתק את המסלול שבו אתה רוצה למדוד זרם, והכנס את המד בפער כך שכל הזרם יעבור דרכו.','Ammeters go in series: break the path you want to measure and put the meter in the gap so all the current flows through it.'),L('אם רצית למדוד מתח — השתמש במד מתח, שמחברים במקביל.','If you meant to measure voltage, use a voltmeter — that one goes in parallel.')];
+     act.push({l:L('החלף למד מתח','Swap to a voltmeter'),fn:()=>{const x=P(am);x.type='VM';x.props={};x.name=autoName('VM');}});}
+    else if(types.includes('L')&&types.includes('V')){const li=loop.find(id=>P(id).type==='L');
+     t=L(`הסליל ${P(li).name} מקצר את המקור ב-DC`,`Inductor ${P(li).name} shorts the source at DC`);
+     why=L('ב-DC הזרם לא משתנה, ולכן המתח על סליל הוא V = L·dI/dt = 0 — הסליל הוא חוט. סליל ישירות על מקור מתח הוא קצר, והזרם בו עולה ללא הגבלה (במציאות מוגבל רק בהתנגדות הליפוף הקטנה).','At DC the current is constant, so the inductor voltage V = L·dI/dt = 0 — it is a wire. An inductor straight across a source is a short; its current ramps up without limit (really limited only by the tiny winding resistance).');
+     fix=[L('הוסף נגד בטור לסליל כדי להגביל את הזרם: I = V/R.','Add a resistor in series with the inductor to limit the current: I = V/R.'),L('טיפ: גרור נגד מהסרגל ושחרר אותו על החוט שמוביל לסליל.','Tip: drag a resistor from the palette and drop it on the wire leading to the inductor.')];}
+    else if(types.filter(x=>x==='V').length>=2){
+     t=L(`מקורות מתח במקביל: ${names}`,`Voltage sources in parallel: ${names}`);
+     why=L('שני מקורות מתח אידיאליים במקביל מנסים לכפות מתח על אותם שני צמתים. אם הערכים שונים — סתירה וזרם אינסופי ביניהם; אם שווים — אי אפשר לדעת מי מספק כמה זרם.','Two ideal voltage sources in parallel each try to force the same pair of nodes. Different values → a contradiction and infinite current between them; equal values → the current split is undefined.');
+     fix=[L('השאר רק מקור אחד, או הוסף נגד קטן (למשל 1Ω) בטור לכל מקור כדי לדמות התנגדות פנימית.','Keep one source, or add a small series resistor (e.g. 1 Ω) to each source to model internal resistance.')];}
+    else if(types.includes('OA')){const oa=loop.find(id=>P(id).type==='OA');
+     t=L(`מוצא ${P(oa).name} מחובר ישירות למקור מתח`,`${P(oa).name} output wired straight to a source`);
+     why=L('מוצא המגבר הוא מקור מתח. חיבור ישיר שלו למקור מתח אחר (או למוצא מגבר אחר) יוצר שתי דרישות סותרות על אותו צומת.','The op-amp output is a voltage source. Wiring it directly to another source (or another op-amp output) puts two conflicting demands on one node.');
+     fix=[L('חבר את המוצא דרך נגד, או בדוק שהחוט לא נוגע בטעות בצומת של המקור.','Connect the output through a resistor, or check the wire does not accidentally touch the source node.')];}
+    else{t=L(`לולאה של רכיבים "מכריחי מתח": ${names}`,`Loop of voltage-forcing parts: ${names}`);
+     why=L('מקורות מתח, מדי זרם וסלילים (ב-DC) כולם מכתיבים מתח. לולאה שבנויה רק מהם לא משאירה שום מקום לחוק אוהם לקבוע זרם.','Voltage sources, ammeters and inductors (at DC) all dictate voltage. A loop made only of them leaves nowhere for Ohm\'s law to set the current.');
+     fix=[L('הוסף נגד בתוך הלולאה, או הסר את אחד הרכיבים.','Put a resistor in the loop or remove one of the parts.')];}
+    add({sev:'err',parts:loop,t,why,fix,act});continue;
+   }
+   par[f(a)]=f(b);edge(a,b,p.id);
+  }
+ }
+ for(const m of R.errs){
+  if(m.k==='noGround'){
+   const src=st.parts.find(p=>p.type==='V')||st.parts.find(p=>p.type==='I');
+   add({sev:'err',parts:src?[src.id]:[],t:L('אין אדמה (נקודת ייחוס)','No ground (reference point)'),
+    why:L('מתח הוא תמיד הפרש בין שתי נקודות. האדמה היא הנקודה שמוגדרת כ-0V, וכל שאר המתחים נמדדים ביחס אליה. בלי אדמה כל המעגל "צף" — אפשר להוסיף לכל הצמתים אותו קבוע והמעגל לא ישתנה, ולכן אין תשובה אחת.','Voltage is always a difference between two points. Ground is the point defined as 0 V and every other voltage is measured against it. Without it the whole circuit floats — adding a constant to every node changes nothing, so there is no single answer.'),
+    fix:[L('גרור "אדמה" מהסרגל וחבר אותה להדק השלילי (−) של המקור.','Drag a Ground from the palette onto the source\'s negative (−) pin.'),L('במעגל עם מגברי שרת: חבר גם את כניסת + (במגבר מהפך) לאדמה.','With op-amps: in an inverting stage, the + input also goes to ground.')],
+    act:src?[{l:L('הוסף אדמה בהדק השלילי','Add ground at the − pin'),fn:()=>{const pp=pinsAbs(src)[1];st.parts.push(mkPart('G',pp[0],pp[1],0));}}]:[]});
+  }else if(m.k==='badVal'){
+   const p=st.parts.find(q=>q.name===m.p);
+   add({sev:'err',parts:p?[p.id]:[],t:L(`ערך לא מובן ב-${m.p}`,`Unreadable value in ${m.p}`),
+    why:L(`השדה "${pn(m.prop)}" ריק, לא מספר, או אפס/שלילי במקום שאסור (התנגדות 0 היא קצר, לא נגד).`,`The "${pn(m.prop)}" field is empty, not a number, or zero/negative where that is not allowed (0 Ω is a short, not a resistor).`),
+    fix:[L('כתוב מספר עם קידומת אם צריך: 4.7k, 100, 2.2M, 10m, 4.7u, 1meg.','Type a number with an optional prefix: 4.7k, 100, 2.2M, 10m, 4.7u, 1meg.'),L('שים לב: m = מילי (1/1000) ו-M = מגה (מיליון).','Note: m = milli (1/1000), M = mega (million).')]});
+  }else if(m.k==='singular'&&!D.some(d=>d.sev==='err')){
+   add({sev:'err',parts:[],t:L('אי אפשר לפתור את המעגל','The circuit cannot be solved'),
+    why:L('מערכת המשוואות של המעגל סותרת או חסרה — בדרך כלל לולאה של מקורות מתח, או צומת שכל מה שמחובר אליו מכתיב מתח.','The circuit equations contradict each other or are incomplete — usually a loop of voltage sources, or a node where everything attached dictates voltage.'),
+    fix:[L('חפש מקור מתח, מד זרם או סליל שמחוברים ישירות זה לזה בלולאה, והכנס נגד ביניהם.','Look for sources, ammeters or inductors joined directly in a loop and put a resistor between them.')]});
+  }
+ }
+ // --- dangling pins
+ if(net.dangling.length){
+  const pinsBy={};
+  st.parts.forEach(p=>pinsAbs(p).forEach(([x,y],i)=>{if(net.dangling.some(d=>d[0]===x&&d[1]===y))(pinsBy[p.id]=pinsBy[p.id]||[]).push([i,x,y]);}));
+  for(const id in pinsBy){const p=P(id),pins=pinsBy[id];
+   const pinName=i=>p.type==='OA'?['−','+',L('מוצא','out')][i]:p.type==='V'?['+','−'][i]:String(i+1);
+   add({sev:'warn',parts:[id],pts:pins.map(q=>[q[1],q[2]]),t:L(`${p.name}: הדק ${pins.map(q=>pinName(q[0])).join(', ')} לא מחובר`,`${p.name}: pin ${pins.map(q=>pinName(q[0])).join(', ')} not connected`),
+    why:L('זרם זורם רק במסלול סגור. הדק שלא מחובר לכלום הוא "קצה מת": שום זרם לא עובר ברכיב, והוא לא משפיע על המעגל. לפעמים החוט נראה מחובר אבל נגמר משבצת אחת לפני ההדק.','Current only flows around a closed path. A pin connected to nothing is a dead end: no current flows through the part, so it does nothing. Often the wire looks connected but stops one grid step short.'),
+    fix:[L('הקש על ההדק האדום — זה מתחיל ממנו חוט — והקש על הנקודה שאליה הוא צריך להגיע.','Tap the red pin — that starts a wire from it — then tap where it should go.'),L('חוט מתחבר רק אם הקצה שלו נוגע בדיוק בהדק או בחוט אחר (נקודה עגולה מסמנת חיבור).','A wire connects only if its end lands exactly on a pin or another wire (a dot marks a junction).')],
+    act:[{l:L('התחל חוט מההדק','Start a wire here'),nofix:true,fn:()=>{setMode('wire');wireStart=[pins[0][1],pins[0][2]];}}]});
+  }
+ }
+ if(!R.ok)return D;
+ // --- floating nodes
+ for(const m of R.warns.filter(w=>w.k==='float')){
+  const ni=net.nodes.findIndex(n=>n.name===m.node),nd=net.nodes[ni];
+  const ps=partsOnNode(ni,net);const isrc=ps.find(p=>p.type==='I');
+  add({sev:'warn',parts:ps.map(p=>p.id),pts:[[nd.x,nd.y]],t:L(`הצומת ${m.node} צף`,`Node ${m.node} is floating`),
+   why:isrc?L(`מקור הזרם ${isrc.name} דוחף זרם לצומת שאין ממנו מסלול DC חזרה. הזרם "נתקע", והמתח היה עולה בלי סוף כדי לנסות לדחוף אותו (במציאות — עד שמשהו נפרץ).`,`Current source ${isrc.name} pushes current into a node with no DC path back. The current has nowhere to go, so the voltage would rise without limit (in reality until something breaks down).`)
+    :L('לצומת אין מסלול DC לאדמה — בדרך כלל כי הוא מחובר רק דרך קבלים (ב-DC קבל הוא נתק) או לכניסת מגבר. המתח שלו לא מוגדר; במציאות הוא נסחף ומושפע מרעש.','The node has no DC path to ground — usually because it only connects through capacitors (open at DC) or to an op-amp input. Its voltage is undefined; in real life it drifts and picks up noise.'),
+   fix:[L('הוסף נגד גדול (למשל 100kΩ) מהצומת לאדמה — "נגד הטיה" שקובע לו מתח DC בלי להעמיס.','Add a large resistor (e.g. 100 kΩ) from the node to ground — a bias resistor that sets its DC level without loading it.'),isrc?L('או סגור מסלול לזרם: נגד או עומס בין הצומת לאדמה.','Or give the current a path: a resistor or load to ground.'):L('ודא שכל כניסת מגבר מקבלת מתח DC דרך נגד או חוט.','Make sure every op-amp input gets a DC path through a resistor or wire.')],
+   act:nd&&nd.x!=null?[{l:L('הוסף 100kΩ לאדמה','Add 100 kΩ to ground'),fn:()=>{const x=nd.x,y=nd.y;st.wires.push({id:nid('w'),pts:[[x,y],[x,y+40]]});st.parts.push(mkPart('R',x,y+80,1,{R:'100k'}));st.parts.push(mkPart('G',x,y+120,0));}}]:[]});
+ }
+ // --- resistor power
+ for(const p of st.parts.filter(p=>p.type==='R')){const r=R.res[p.id];if(!r||!r.over)continue;const v=r.vals;
+  const newP=stdUp(2*r.P,PWR),newR=e12(2*r.V*r.V/v.Pmax,1);
+  add({sev:'warn',parts:[p.id],t:L(`${p.name} מתחמם יתר על המידה`,`${p.name} is overheating`),
+   why:L(`כל זרם שעובר בנגד הופך לחום: P = I²·R = (${eng(r.I,'A')})² · ${eng(v.R,'Ω')} = ${eng(r.P,'W')}. הנגד מדורג ל-${eng(v.Pmax,'W')} בלבד, אז הוא יתחמם, ישנה ערך ובסוף יישרף.`,`Every bit of current through a resistor turns into heat: P = I²·R = (${eng(r.I,'A')})² · ${eng(v.R,'Ω')} = ${eng(r.P,'W')}. It is only rated ${eng(v.Pmax,'W')}, so it will overheat, drift and eventually burn.`),
+   fix:[L(`פתרון 1 — נגד חזק יותר: בחר דירוג של לפחות פי 2 מההספק בפועל → ${eng(newP,'W')}. הערך החשמלי לא משתנה.`,`Fix 1 — a beefier resistor: pick at least 2× the actual power → ${eng(newP,'W')}. The circuit behaviour does not change.`),
+        L(`פתרון 2 — להקטין את הזרם: עם אותו מתח (${eng(r.V,'V')}) ההספק הוא V²/R, אז R ≥ 2·V²/Pmax → ${eng(newR,'Ω')}. שים לב: זה משנה את התפקוד של המעגל (זרמים, הגבר).`,`Fix 2 — reduce the current: at the same voltage (${eng(r.V,'V')}) power is V²/R, so R ≥ 2·V²/Pmax → ${eng(newR,'Ω')}. Note this changes how the circuit behaves (currents, gain).`)],
+   act:[{l:L(`דירוג ${eng(newP,'W')}`,`Rate ${eng(newP,'W')}`),fn:()=>{p.props.Pmax=vs(newP);}},{l:`R = ${eng(newR,'Ω')}`,fn:()=>{p.props.R=vs(newR);}}]});
+ }
+ // --- op-amps
+ for(const p of st.parts.filter(p=>p.type==='OA')){const r=R.res[p.id];if(!r)continue;const v=r.vals,[nm,np,no]=r.nodes;
+  const links=(a,b)=>a===b||st.parts.some(q=>q.id!==p.id&&q.type!=='VM'&&net.partNodes[q.id].includes(a)&&net.partNodes[q.id].includes(b));
+  const negFB=links(no,nm),posFB=np!==0&&no!==np&&links(no,np);
+  if(r.sat){
+   const ideal=idealOpampOut(p.id);
+   const rf=st.parts.find(q=>q.type==='R'&&net.partNodes[q.id].includes(no)&&net.partNodes[q.id].includes(nm));
+   if(!negFB){
+    add({sev:'warn',parts:[p.id],t:posFB?L(`${p.name}: משוב חיובי — המגבר "נתקע" בקצה`,`${p.name}: positive feedback — output slams to a rail`):L(`${p.name}: אין משוב — המגבר עובד כמשווה`,`${p.name}: no feedback — it acts as a comparator`),
+     why:posFB?L('המשוב מחובר לכניסת +. כל עלייה במוצא מעלה את V+, שמעלה עוד את המוצא — תגובת שרשרת עד הרוויה. זה שימושי למשווה עם היסטרזיס (שמיט), לא למגבר.','The feedback goes to the + input. Any rise at the output raises V+, which raises the output further — a runaway until saturation. Useful for a Schmitt trigger, not for an amplifier.')
+      :L(`בלי משוב, המגבר מגביר את ההפרש בין הכניסות פי A = ${eng(v.A,'',3)}. אפילו הפרש של מיקרו-וולט מספיק כדי להגיע לרוויה, ולכן המוצא תמיד באחד הקצוות (±${eng(v.Vsat,'V')}).`,`Without feedback the op-amp multiplies the input difference by A = ${eng(v.A,'',3)}. Even a microvolt is enough to saturate, so the output always sits at ±${eng(v.Vsat,'V')}.`),
+     fix:[L('למגבר לינארי: חבר נגד (Rf) בין המוצא לכניסת − (משוב שלילי). ההגבר יהיה −Rf/Rin במהפך, או 1+Rf/R1 בלא מהפך.','For a linear amplifier, connect a resistor (Rf) from the output to the − input (negative feedback). Gain becomes −Rf/Rin (inverting) or 1+Rf/R1 (non-inverting).'),posFB?L('אם המשוב מחובר ל-+ בטעות — העבר אותו לכניסת −.','If the feedback went to + by mistake, move it to the − input.'):L('אם רצית משווה — זה תקין, והרוויה היא בדיוק המוצא הצפוי.','If you wanted a comparator, this is fine — saturation is the expected output.')]});
+   }else{
+    const fac=ideal?0.85*v.Vsat/Math.abs(ideal):null;
+    const act=[];let fix=[L(`הקטן את ההגבר כך ש-|Vout| יישאר מתחת ל-${eng(v.Vsat,'V')} (רצוי מרווח של ~15%).`,`Lower the gain so |Vout| stays under ${eng(v.Vsat,'V')} (keep ~15% margin).`),L('או הקטן את אות הכניסה.','Or reduce the input signal.'),L(`או הגדל את מתח ההזנה של המגבר (כאן: "רוויה ±").`,`Or raise the op-amp supply (here: "Saturation ±").`)];
+    if(rf&&fac){const nr=e12(parseVal(rf.props.R)*fac,-1);fix[0]+=L(` לדוגמה: ${rf.name} → ${eng(nr,'Ω')}.`,` e.g. ${rf.name} → ${eng(nr,'Ω')}.`);act.push({l:`${rf.name} = ${eng(nr,'Ω')}`,fn:()=>{rf.props.R=vs(nr);}});}
+    if(ideal){const nv=Math.ceil(Math.abs(ideal)*1.15);act.push({l:L(`הזנה ±${nv}V`,`Supply ±${nv} V`),fn:()=>{p.props.Vsat=String(nv);}});}
+    add({sev:'warn',parts:rf?[p.id,rf.id]:[p.id],t:L(`${p.name} ברוויה`,`${p.name} is saturated`),
+     why:L(`לפי ההגבר, המוצא היה צריך להגיע לערך ${ideal!=null?eng(ideal,'V'):'?'}. אבל מגבר לא יכול להוציא יותר ממתח ההזנה שלו (±${eng(v.Vsat,'V')}), אז המוצא "נחתך" בקצה. במצב הזה הקצר המדומה (V+ = V−) כבר לא מתקיים, וכל החישובים של "הגבר = Rf/Rin" מפסיקים לעבוד.`,`By the gain, the output should reach ${ideal!=null?eng(ideal,'V'):'?'}. But an op-amp cannot exceed its supply (±${eng(v.Vsat,'V')}), so the output is clipped at the rail. In that state the virtual short (V+ = V−) no longer holds and gain formulas stop applying.`),
+     fix,act});
+   }
+  }
+  if(isFinite(v.Imax)&&v.Imax>0&&Math.abs(r.Iout)>v.Imax){
+   const loads=st.parts.filter(q=>q.type==='R'&&net.partNodes[q.id].includes(no)&&net.partNodes[q.id].includes(0));
+   const need=e12(Math.abs(r.Vout)/(0.8*v.Imax),1);
+   add({sev:'warn',parts:[p.id,...loads.map(q=>q.id)],t:L(`${p.name} מתבקש לספק יותר מדי זרם`,`${p.name} is asked for too much current`),
+    why:L(`הזרם במוצא הוא ${eng(Math.abs(r.Iout),'A')}, אבל מגבר שרת טיפוסי מספק רק ~${eng(v.Imax,'A')}. העומס "כבד" מדי — התנגדות נמוכה מדי — ולכן במציאות המוצא יקרוס, יתעוות או יתחמם.`,`The output current is ${eng(Math.abs(r.Iout),'A')}, but a typical op-amp delivers only ~${eng(v.Imax,'A')}. The load is too heavy (too low a resistance), so in reality the output would sag, distort or overheat.`),
+    fix:[L(`הגדל את התנגדות העומס: R ≥ |Vout| / I ≈ ${eng(Math.abs(r.Vout),'V')} / ${eng(0.8*v.Imax,'A')} → ${eng(need,'Ω')}.`,`Raise the load resistance: R ≥ |Vout| / I ≈ ${eng(Math.abs(r.Vout),'V')} / ${eng(0.8*v.Imax,'A')} → ${eng(need,'Ω')}.`),L('לעומס כבד באמת (מנוע, רמקול) מוסיפים שלב הספק — טרנזיסטור או מגבר הספק אחרי המגבר.','For a truly heavy load (motor, speaker) add a power stage — a transistor or power amp after the op-amp.')],
+    act:loads.length?[{l:`${loads[0].name} = ${eng(need,'Ω')}`,fn:()=>{loads[0].props.R=vs(need);}}]:[]});
+  }
+ }
+ // --- capacitor / inductor ratings
+ for(const p of st.parts){const r=R.res[p.id];if(!r||!r.over)continue;
+  if(p.type==='C'){const nv=stdUp(1.5*Math.abs(r.V),CAPV);
+   add({sev:'warn',parts:[p.id],t:L(`${p.name}: מתח מעל דירוג הקבל`,`${p.name}: voltage above the capacitor rating`),
+    why:L(`על הקבל ${eng(Math.abs(r.V),'V')} אבל הוא בנוי ל-${eng(r.vals.Vmax,'V')}. הבידוד הדק בין הלוחות עלול להיפרץ — קבל אלקטרוליטי אף עלול להתנפח או להתפוצץ.`,`It sees ${eng(Math.abs(r.V),'V')} but is built for ${eng(r.vals.Vmax,'V')}. The thin dielectric can break down — an electrolytic may even bulge or burst.`),
+    fix:[L(`בחר קבל עם דירוג של לפחות פי 1.5 מהמתח → ${nv}V.`,`Choose a rating of at least 1.5× the voltage → ${nv} V.`)],act:[{l:`${nv} V`,fn:()=>{p.props.Vmax=String(nv);}}]});}
+  if(p.type==='L'){const ni=+(Math.abs(r.I)*1.3).toPrecision(2);
+   add({sev:'warn',parts:[p.id],t:L(`${p.name}: זרם מעל דירוג הסליל`,`${p.name}: current above the inductor rating`),
+    why:L(`זרם של ${eng(Math.abs(r.I),'A')} מעל ${eng(r.vals.Irated,'A')} יגרום לליבה להגיע לרוויה (ההשראות קורסת) ולליפוף להתחמם.`,`${eng(Math.abs(r.I),'A')} above the ${eng(r.vals.Irated,'A')} rating saturates the core (inductance collapses) and heats the winding.`),
+    fix:[L(`בחר סליל לזרם של לפחות ${eng(ni,'A')}, או הגבל את הזרם עם נגד בטור.`,`Pick an inductor rated ≥ ${eng(ni,'A')}, or limit the current with a series resistor.`)],act:[{l:eng(ni,'A'),fn:()=>{p.props.Irated=vs(ni);}}]});}
+ }
+ // --- voltmeter possibly in series
+ for(const p of st.parts.filter(p=>p.type==='VM')){const r=R.res[p.id];const [a,b]=r.nodes;if(!a||!b||Math.abs(r.V)<1e-6)continue;
+  const onB=partsOnNode(b,net).filter(q=>q.id!==p.id),onA=partsOnNode(a,net).filter(q=>q.id!==p.id);
+  const dead=side=>side.length>0&&side.every(q=>q.type!=='C'&&q.type!=='OA'&&q.type!=='G')&&side.some(q=>q.type==='R')&&side.every(q=>{const x=R.res[q.id];return !x||!x.I||Math.abs(x.I)<1e-9;});
+  if(onA.length&&onB.length&&(dead(onA)||dead(onB)))
+   add({sev:'info',parts:[p.id],t:L(`ייתכן ש-${p.name} מחובר בטור`,`${p.name} may be wired in series`),
+    why:L('למד מתח יש התנגדות כמעט אינסופית. אם הוא בתוך המסלול של הזרם (בטור), הוא חוסם את הזרם: כל הרכיבים אחריו מקבלים 0A והמד מראה כמעט את כל מתח המקור.','A voltmeter has near-infinite resistance. Placed in the current path (in series) it blocks the current: everything after it gets 0 A and the meter shows almost the full source voltage.'),
+    fix:[L('מד מתח מחברים במקביל: הדק אחד בכל צד של הרכיב שרוצים למדוד, והמסלול המקורי נשאר סגור בחוט.','Voltmeters go in parallel: one lead on each side of the part being measured, with the original path still closed by a wire.')],
+    act:[{l:L('החלף למד זרם','Swap to an ammeter'),fn:()=>{p.type='AM';p.props={};p.name=autoName('AM');}}]});
+ }
+ if(R.warns.some(w=>w.k==='noConv'))add({sev:'warn',parts:st.parts.filter(p=>p.type==='OA').map(p=>p.id),t:L('המגברים לא התייצבו','Op-amps did not settle'),why:L('החישוב מנסה מצבי רוויה שונים ולא מוצא מצב יציב — סימן למשוב חיובי שגורם למוצא לקפוץ בין הקצוות.','The solver tries saturation states and finds none stable — a sign of positive feedback flipping the output between rails.'),fix:[L('בדוק שהמשוב חוזר לכניסת − ולא ל-+.','Check that feedback returns to the − input, not +.')]});
+ return D;
+}
+const SEVI={err:'⛔',warn:'⚠',info:'💡'};
+let DIAG=[];
+function refreshDiag(){DIAG=diagnose();diagParts=new Map();for(const d of DIAG)for(const id of d.parts||[])if(!diagParts.has(id)||d.sev==='err')diagParts.set(id,d.sev);}
+function diagPane(){
+ if(!st.parts.length)return `<p style="color:var(--muted)">${L('אין רכיבים עדיין.','No parts yet.')}</p>`;
+ if(!DIAG.length)return `<div class="msg ok">✓ ${L('לא נמצאו תקלות. המעגל תקין חשמלית.','No faults found. The circuit is electrically sound.')}</div><p style="color:var(--muted);font-size:13px">${L('המערכת בודקת: לולאות קצר, אדמה, הדקים פתוחים, צמתים צפים, חימום נגדים, רוויה ומשוב במגברים, עומס יתר על מוצא, דירוגי קבלים וסלילים, ומדים שחוברו הפוך.','Checks: short loops, ground, open pins, floating nodes, resistor heating, op-amp saturation & feedback, output overload, capacitor/inductor ratings, and meters wired the wrong way.')}</p>`;
+ const cnt=s=>DIAG.filter(d=>d.sev===s).length;
+ let h=`<div class="row" style="margin-top:0">${cnt('err')?`<span class="pill err">⛔ ${cnt('err')} ${L('שגיאות','errors')}</span>`:''}${cnt('warn')?`<span class="pill warn">⚠ ${cnt('warn')} ${L('אזהרות','warnings')}</span>`:''}${cnt('info')?`<span class="pill info">💡 ${cnt('info')}</span>`:''}</div>`;
+ DIAG.forEach((d,i)=>{
+  const names=(d.parts||[]).map(id=>getPart(id)).filter(Boolean).map(p=>p.name);
+  h+=`<div class="dcard ${d.sev}${focusDiag===i?' foc':''}" data-di="${i}">
+   <div class="dt">${SEVI[d.sev]} ${esc(d.t)}</div>
+   ${names.length||d.pts?`<button class="dloc" data-show="${i}">📍 ${names.length?esc(names.join(', ')):L('הראה','Show')}</button>`:''}
+   <div class="dh">${L('למה זה קורה?','Why does this happen?')}</div><div class="dw">${esc(d.why)}</div>
+   <div class="dh">${L('איך מתקנים?','How to fix it')}</div><ol>${d.fix.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+   ${(d.act&&d.act.length)?`<div class="row">${d.act.map((a,j)=>`<button class="pri" data-fix="${i}:${j}">${a.nofix?'':'🔧 '}${esc(a.l)}</button>`).join('')}</div>`:''}
+  </div>`;});
+ return h;
+}
+function showDiag(i){
+ focusDiag=i;const d=DIAG[i];if(!d)return;
+ const pts=[];(d.parts||[]).forEach(id=>{const p=getPart(id);if(p)pts.push([p.x,p.y]);});(d.pts||[]).forEach(q=>pts.push(q));
+ if(pts.length){const r=svg.getBoundingClientRect();const cx=pts.reduce((a,q)=>a+q[0],0)/pts.length,cy=pts.reduce((a,q)=>a+q[1],0)/pts.length;
+  view.x=r.width/2-cx*view.s;view.y=r.height/2-cy*view.s;}
+ if(d.parts&&d.parts.length===1)sel={kind:'part',id:d.parts[0]};
+ render();
+}
+function applyFix(i,j){
+ const d=DIAG[i],a=d&&d.act&&d.act[j];if(!a)return;
+ if(a.nofix){a.fn();render();updateToolbar();return;}
+ const before=DIAG.length;snapshot();a.fn();focusDiag=null;changed();
+ const fixed=!DIAG.some(x=>x.t===d.t);
+ toast(fixed?L('✓ תוקן. אפשר לבטל עם ↶','✓ Fixed. Undo with ↶'):L('שונה — אבל הבעיה עדיין קיימת, ראה הסבר','Changed — but the issue remains, see the explanation'));
+}
+
+/* ================= editable table ================= */
+function rowRes(p){
+ if(!R||!R.ok)return '—';const o=rowObj(p);
+ return [o.V&&('V '+o.V),o.I&&('I '+o.I),o.P&&('P '+o.P)].filter(Boolean).join('<br>')+(o.note?`<br><small style="color:var(--gold)">${esc(o.note)}</small>`:'');
+}
+function tblPane(){
+ const ps=st.parts.filter(p=>p.type!=='G');
+ if(!ps.length)return `<p style="color:var(--muted)">${L('הוסף רכיבים — הם יופיעו כאן אוטומטית, ואפשר לערוך את כל הערכים מהטבלה.','Add parts — they appear here automatically and every value is editable from the table.')}</p>`;
+ let h=`<table class="et"><tr><th>${L('רכיב','Part')}</th><th>${L('ערכים (לעריכה)','Values (editable)')}</th><th>${L('תוצאה','Result')}</th></tr>`;
+ for(const p of ps){const isSel=sel&&sel.kind==='part'&&sel.id===p.id,ds=diagParts.get(p.id);
+  h+=`<tr data-row="${p.id}" class="${isSel?'rsel':''}${ds?' r'+ds:''}"><td><input class="ti tn" data-pid="${p.id}" data-name value="${esc(p.name)}"><div class="tt">${esc(tn(p.type))}${ds?' '+SEVI[ds]:''}</div></td><td>`;
+  const props=TYPES[p.type].props;
+  for(const [k,,u] of props)h+=`<label class="tl"><span class="tk">${esc(pn(k))}</span><span class="tv"><input class="ti${isFinite(parseVal(p.props[k]))?'':' bad'}" data-pid="${p.id}" data-prop="${k}" value="${esc(p.props[k])}" autocomplete="off" spellcheck="false"><i>${u}</i></span></label>`;
+  if(!props.length)h+=`<span class="tt">${L('אין ערכים','No values')}</span>`;
+  h+=`</td><td class="num" id="tr_${p.id}">${rowRes(p)}</td></tr>`;}
+ return h+'</table>';
+}
+
+/* ================= auto tidy ================= */
+function partBox(p,pad){const b=TYPES[p.type].box,o=(p.rot||0)%2,hw=(o?b[1]:b[0])+(pad||0),hh=(o?b[0]:b[1])+(pad||0);return [p.x-hw,p.y-hh,p.x+hw,p.y+hh];}
+function boxesOverlap(s,p){const a=partBox(p,8);return s.parts.some(q=>{if(q===p)return false;const b=partBox(q,8);return a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3];});}
+function pinPartition(s){const net=buildNets(s),m={};s.parts.forEach(p=>net.partNodes[p.id].forEach((n,i)=>m[p.id+':'+i]=n));return m;}
+function samePartition(a,b){const m1={},m2={};for(const k in a){if(!(k in b))return false;const x=a[k],y=b[k];
+ if((x===0)!==(y===0))return false;if(x in m1){if(m1[x]!==y)return false;}else m1[x]=y;if(y in m2){if(m2[y]!==x)return false;}else m2[y]=x;}return true;}
+function equalizeAxis(s,ax){
+ const vals=[...new Set(s.parts.map(p=>p[ax]))].sort((a,b)=>a-b);if(vals.length<3)return;
+ const gaps=vals.slice(1).map((v,i)=>v-vals[i]);const big=gaps.filter(g=>g>=60).sort((a,b)=>a-b);if(big.length<2)return;
+ const target=Math.max(80,Math.round(big[Math.floor(big.length/2)]/GRID)*GRID);
+ const half=v=>Math.max(0,...s.parts.filter(p=>p[ax]===v).map(p=>{const b=partBox(p,0);return ax==='x'?(b[2]-b[0])/2:(b[3]-b[1])/2;}));
+ const nv=[vals[0]];
+ for(let i=1;i<vals.length;i++){const g=gaps[i-1];let ng=g;
+  if(g>=60){const need=Math.ceil((half(vals[i-1])+half(vals[i])+40)/GRID)*GRID;ng=Math.max(target,Math.min(g,need)>need?need:need,target);ng=Math.max(need,target);}
+  nv.push(nv[i-1]+ng);}
+ const map={};vals.forEach((v,i)=>map[v]=nv[i]);s.parts.forEach(p=>p[ax]=map[p[ax]]);
+}
+function straighten(s,clusters){
+ const pc={};s.parts.forEach(p=>pc[p.id]=p.type==='G'?1:TYPES[p.type].pins.length);
+ for(let pass=0;pass<6;pass++){let moved=false;
+  for(const cl of clusters){if(cl.length!==2)continue;const [[ia,ka],[ib,kb]]=cl;if(ia===ib)continue;
+   const A=s.parts.find(p=>p.id===ia),B=s.parts.find(p=>p.id===ib);const pa=pinsAbs(A)[ka],pb=pinsAbs(B)[kb];
+   const dx=pb[0]-pa[0],dy=pb[1]-pa[1];if(!dx||!dy)continue;
+   const ax=Math.abs(dy)<=Math.abs(dx)?'y':'x',d=ax==='y'?dy:dx;if(Math.abs(d)>80)continue;
+   const order=pc[ia]<pc[ib]?[[A,d],[B,-d]]:[[B,-d],[A,d]];
+   for(const [P,dd] of order){const old=P[ax];P[ax]=old+dd;if(boxesOverlap(s,P)){P[ax]=old;continue;}moved=true;break;}
+  }
+  if(!moved)break;}
+}
+function onSegIncl(x,y,s){const [x1,y1,x2,y2]=s;if((x2-x1)*(y-y1)-(y2-y1)*(x-x1)!==0)return false;return x>=Math.min(x1,x2)&&x<=Math.max(x1,x2)&&y>=Math.min(y1,y2)&&y<=Math.max(y1,y2);}
+function segsOf(paths){const o=[];for(const pt of paths)for(let i=1;i<pt.length;i++)if(pt[i][0]!==pt[i-1][0]||pt[i][1]!==pt[i-1][1])o.push([pt[i-1][0],pt[i-1][1],pt[i][0],pt[i][1]]);return o;}
+function scoreRoute(segs,ni,occ,pinPts,bodies){
+ let hard=0,soft=0,len=0;
+ for(const s of segs){len+=Math.abs(s[2]-s[0])+Math.abs(s[3]-s[1]);
+  for(const q of pinPts)if(q.net!==ni&&onSegIncl(q.x,q.y,s))hard++;
+  for(const o of occ){if(o.net===ni)continue;const t=o.seg;
+   if(onSegIncl(s[0],s[1],t)||onSegIncl(s[2],s[3],t)||onSegIncl(t[0],t[1],s)||onSegIncl(t[2],t[3],s)){hard++;continue;}
+   const sh=s[1]===s[3],th=t[1]===t[3];
+   if(sh!==th){const h=sh?s:t,v=sh?t:s;const x=v[0],y=h[1];if(x>Math.min(h[0],h[2])&&x<Math.max(h[0],h[2])&&y>Math.min(v[1],v[3])&&y<Math.max(v[1],v[3]))soft+=40;}}
+  for(const b of bodies){const x1=Math.min(s[0],s[2]),x2=Math.max(s[0],s[2]),y1=Math.min(s[1],s[3]),y2=Math.max(s[1],s[3]);
+   if(x1<b[2]&&x2>b[0]&&y1<b[3]&&y2>b[1])soft+=250;}}
+ return hard*1e6+soft+len+segs.length*12;
+}
+function pinDir(p,i){const [x,y]=pinsAbs(p)[i];if(p.type==='G')return [0,-1];const dx=x-p.x,dy=y-p.y;return Math.abs(dx)>=Math.abs(dy)?[Math.sign(dx)||1,0]:[0,Math.sign(dy)||1];}
+function candidates(pins){
+ const C=[],sn=v=>Math.round(v/GRID)*GRID;
+ if(pins.length===2){const [a,b]=pins.map(q=>[q.x,q.y]);
+  if(a[0]===b[0]||a[1]===b[1])C.push([[a,b]]);
+  C.push([[a,[b[0],a[1]],b]],[[a,[a[0],b[1]],b]]);
+  const mx=sn((a[0]+b[0])/2),my=sn((a[1]+b[1])/2);
+  C.push([[a,[mx,a[1]],[mx,b[1]],b]],[[a,[a[0],my],[b[0],my],b]]);
+  for(const st_ of [20,40]){const a2=[a[0]+pins[0].d[0]*st_,a[1]+pins[0].d[1]*st_],b2=[b[0]+pins[1].d[0]*st_,b[1]+pins[1].d[1]*st_];
+   C.push([[a,a2,[b2[0],a2[1]],b2,b]],[[a,a2,[a2[0],b2[1]],b2,b]]);
+   for(const off of [-80,-40,40,80]){C.push([[a,a2,[a2[0],a2[1]+off],[b2[0],a2[1]+off],b2,b]]);C.push([[a,a2,[a2[0]+off,a2[1]],[a2[0]+off,b2[1]],b2,b]]);}}
+ }else{
+  const xs=pins.map(q=>q.x),ys=pins.map(q=>q.y),mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+  const med=a=>sn([...a].sort((u,v)=>u-v)[Math.floor(a.length/2)]);
+  for(const Y of new Set([...ys,med(ys),mny-20,mxy+20,mny-40,mxy+40])){const paths=[[[mnx,Y],[mxx,Y]]];pins.forEach(q=>{if(q.y!==Y)paths.push([[q.x,q.y],[q.x,Y]]);});C.push(paths);}
+  for(const X of new Set([...xs,med(xs),mnx-20,mxx+20,mnx-40,mxx+40])){const paths=[[[X,mny],[X,mxy]]];pins.forEach(q=>{if(q.x!==X)paths.push([[q.x,q.y],[X,q.y]]);});C.push(paths);}
+  for(const hv of [0,1]){const inT=[pins[0]],paths=[],rest=pins.slice(1);
+   while(rest.length){let bi=0,bj=0,bd=1e9;rest.forEach((q,i)=>inT.forEach((t,j)=>{const d=Math.abs(q.x-t.x)+Math.abs(q.y-t.y);if(d<bd){bd=d;bi=i;bj=j;}}));
+    const q=rest.splice(bi,1)[0],t=inT[bj];paths.push(hv?[[t.x,t.y],[q.x,t.y],[q.x,q.y]]:[[t.x,t.y],[t.x,q.y],[q.x,q.y]]);inT.push(q);}
+   C.push(paths);}
+ }
+ return C;
+}
+function routeAll(s,clusters){
+ const pinPts=[],bodies=s.parts.map(p=>partBox(p,-5));
+ clusters.forEach((cl,ni)=>cl.forEach(([pid,i])=>{const p=s.parts.find(q=>q.id===pid);const [x,y]=pinsAbs(p)[i];pinPts.push({net:ni,x,y,d:pinDir(p,i)});}));
+ const occ=[],wires=[];
+ const order=clusters.map((c,i)=>i).sort((a,b)=>clusters[b].length-clusters[a].length);
+ for(const ni of order){
+  const pts=[];pinPts.filter(q=>q.net===ni).forEach(q=>{if(!pts.some(r=>r.x===q.x&&r.y===q.y))pts.push(q);});
+  if(pts.length<2)continue;
+  let best=null,bs=Infinity;
+  for(const c of candidates(pts)){const sc=scoreRoute(segsOf(c),ni,occ,pinPts,bodies);if(sc<bs){bs=sc;best=c;}}
+  if(!best||bs>=1e6)return null;
+  segsOf(best).forEach(sg=>occ.push({net:ni,seg:sg}));
+  best.forEach(path=>{const q=path.filter((v,i)=>i===0||v[0]!==path[i-1][0]||v[1]!==path[i-1][1]);
+   const clean=q.filter((v,i)=>i===0||i===q.length-1||!((q[i-1][0]===v[0]&&v[0]===q[i+1][0])||(q[i-1][1]===v[1]&&v[1]===q[i+1][1])));
+   if(clean.length>=2)wires.push({id:nid('w'),pts:clean});});
+ }
+ return wires;
+}
+function tidy(){
+ if(!st.parts.length)return;
+ const orig=JSON.parse(JSON.stringify(st)),part0=pinPartition(orig);
+ const net=buildNets(orig),cmap={};
+ orig.parts.forEach(p=>net.partRoots[p.id].forEach((r,i)=>(cmap[r]=cmap[r]||[]).push([p.id,i])));
+ const clusters=Object.values(cmap).filter(c=>c.length>=2);
+ for(const cfg of [{eq:1,str:1},{eq:0,str:1},{eq:1,str:0},{eq:0,str:0}]){
+  const s=JSON.parse(JSON.stringify(orig));
+  if(cfg.eq){equalizeAxis(s,'x');equalizeAxis(s,'y');}
+  if(cfg.str)straighten(s,clusters);
+  const w=routeAll(s,clusters);if(!w)continue;
+  s.wires=w;
+  if(!samePartition(part0,pinPartition(s)))continue;
+  snapshot();st=s;sel=null;changed();fit();
+  toast(L('✨ המעגל סודר — החיבורים נשארו זהים. אפשר לבטל עם ↶','✨ Tidied — connections unchanged. Undo with ↶'));return;
+ }
+ toast(L('לא מצאתי סידור שלא משנה חיבורים — נסה להרחיק רכיבים צפופים','Could not tidy without changing connections — try spreading crowded parts'));
+}
+
+/* ================= play: current-flow animation ================= */
+let running=false;
+function computeFlows(){
+ if(!R||!R.ok)return [];
+ const pts={},addP=(x,y)=>{pts[K(x,y)]=[x,y];};
+ st.wires.forEach(w=>w.pts.forEach(([x,y])=>addP(x,y)));
+ const inj={},gKeys=new Set();
+ st.parts.forEach(p=>{const pi=R.pinI[p.id]||[];pinsAbs(p).forEach(([x,y],i)=>{const k=K(x,y);addP(x,y);
+  if(p.type==='G')gKeys.add(k);else inj[k]=(inj[k]||0)-(pi[i]||0);});});
+ const P=Object.values(pts),adj={},edges=[];
+ st.wires.forEach(w=>{for(let i=1;i<w.pts.length;i++){const s=[w.pts[i-1][0],w.pts[i-1][1],w.pts[i][0],w.pts[i][1]];
+  const dx=s[2]-s[0],dy=s[3]-s[1];
+  const on=P.filter(([x,y])=>onSegIncl(x,y,s)).sort((a,b)=>((a[0]-s[0])*dx+(a[1]-s[1])*dy)-((b[0]-s[0])*dx+(b[1]-s[1])*dy));
+  for(let j=1;j<on.length;j++){const a=K(on[j-1][0],on[j-1][1]),b=K(on[j][0],on[j][1]);if(a===b)continue;
+   const e={a,b};edges.push(e);(adj[a]=adj[a]||[]).push(e);(adj[b]=adj[b]||[]).push(e);}}});
+ const seen=new Set();
+ for(const s0 of Object.keys(adj)){if(seen.has(s0))continue;
+  const comp=[s0];seen.add(s0);
+  for(let i=0;i<comp.length;i++)for(const e of adj[comp[i]]){const v=e.a===comp[i]?e.b:e.a;if(!seen.has(v)){seen.add(v);comp.push(v);}}
+  const root=comp.find(k=>gKeys.has(k))||comp[0];
+  const pe={},order=[root],vis=new Set([root]);
+  for(let i=0;i<order.length;i++){const u=order[i];for(const e of adj[u]){const v=e.a===u?e.b:e.a;if(!vis.has(v)){vis.add(v);pe[v]=[e,u];order.push(v);}}}
+  const sub={};order.forEach(k=>sub[k]=inj[k]||0);
+  for(let i=order.length-1;i>0;i--){const v=order[i],[e,u]=pe[v];e.fl=[v,u,sub[v]];sub[u]+=sub[v];}
+ }
+ const out=[];
+ for(const e of edges){if(!e.fl||Math.abs(e.fl[2])<1e-9)continue;const [v,u,I]=e.fl;const a=pts[I>0?v:u],b=pts[I>0?u:v];out.push({s:[a[0],a[1],b[0],b[1]],I:Math.abs(I)});}
+ for(const p of st.parts){const pi=R.pinI[p.id]||[],ps=pinsAbs(p);
+  if(p.type==='OA'){const io=-(pi[2]||0);if(Math.abs(io)<1e-9)continue;const o=ps[2],c=[p.x+(o[0]-p.x)*0.3,p.y+(o[1]-p.y)*0.3];
+   out.push({s:io>0?[c[0],c[1],o[0],o[1]]:[o[0],o[1],c[0],c[1]],I:Math.abs(io),part:1});continue;}
+  if(ps.length!==2)continue;const I=pi[0]||0;if(Math.abs(I)<1e-9)continue;
+  const [a,b]=I>0?[ps[0],ps[1]]:[ps[1],ps[0]];out.push({s:[a[0],a[1],b[0],b[1]],I:Math.abs(I),part:1});}
+ return out;
+}
+function flowMarkup(){
+ let h='<g class="flows">';
+ for(const f of computeFlows()){const d=Math.max(0.3,Math.min(3,1.6-0.32*Math.log10(f.I/1e-3)));
+  h+=`<line class="flow${f.part?' fp':''}" x1="${f.s[0]}" y1="${f.s[1]}" x2="${f.s[2]}" y2="${f.s[3]}" style="animation-duration:${d.toFixed(2)}s"/>`;}
+ return h+'</g>';
+}
+function togglePlay(){
+ running=!running;
+ if(running){
+  R=solve(st);refreshDiag();
+  const bad=DIAG.filter(d=>d.sev!=='info');
+  if(bad.length){tab='diag';$('side').classList.remove('min');
+   toast(L(`▶ נמצאו ${bad.length} תקלות — הרכיבים הבעייתיים זוהרים באדום. ההסברים בלשונית "תקלות".`,`▶ ${bad.length} fault(s) found — faulty parts glow red. Details in the "Faults" tab.`));}
+  else toast(R&&R.ok?L('▶ המעגל תקין — הנקודות מראות את כיוון הזרם (מהירות לפי גודל הזרם)','▶ Circuit OK — dots show current direction (speed ~ magnitude)'):L('אין מה להריץ','Nothing to run'));
+ }
+ render();renderSide();
+}
+
+/* ================= boot ================= */
+st=load();const fresh=!st;if(!st)st={parts:[],wires:[]};
+if(fresh)st=ex('inv');
+applyLang();changed();requestAnimationFrame(fit);
+</script>
+</body>
+</html>
