@@ -160,6 +160,7 @@ table.et tr.rwarn td:first-child{box-shadow:inset -3px 0 0 var(--gold)}
   <button id="bTidy"></button>
   <button id="bExp" class="pri"></button>
   <button id="bVals" class="on"></button>
+  <button id="bBlocks" style="border-style:dashed;color:#c4b5fd"></button>
   <button id="bLang">EN</button>
  </div>
 </header>
@@ -977,10 +978,79 @@ function doPrint(){
  p.setAttribute('dir',lang==='he'?'rtl':'ltr');
  setTimeout(()=>window.print(),50);
 }
-function saveJSON(){download(new Blob([JSON.stringify({schema:'circuit-lab/1',parts:st.parts,wires:st.wires},null,1)],{type:'application/json'}),'circuit.json');}
-$('fileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.parts)||!Array.isArray(j.wires))throw 0;
- j.parts.forEach(p=>{if(!TYPES[p.type])throw 0;p.props=Object.assign(defProps(p.type),p.props||{});p.id=p.id||nid('p');});
- snapshot();st={parts:j.parts,wires:j.wires};sel=null;changed();fit();toast(L('המעגל נטען','Circuit loaded'));}catch(err){toast(L('קובץ לא תקין','Invalid file'));}e.target.value='';};
+/* ===================== ofir-lab-link/v1 (shared by Circuit Lab and Control Block Lab) =====================
+ Envelope: {schema:'ofir-lab-link/v1', app:'circuit-lab'|'control-block-lab', kind:'circuit'|'block-diagram',
+            title, template?, notes?:{he,en}, data:{...}, createdAt, ...any unknown keys are preserved}
+ Deep link: <app-url>/#link=<base64url(JSON envelope)>
+*/
+const LINK_SCHEMA='ofir-lab-link/v1';
+const LINK_URLS={'circuit-lab':'https://circuit-lab-ofir.surge.sh/','control-block-lab':'https://control-block-lab-ofir.surge.sh/'};
+const LINK_KNOWN=['schema','app','kind','title','template','notes','data','createdAt'];
+function linkEnvelope(app,kind,data,opts){
+ const o=Object.assign({},opts&&opts.extra||{});
+ Object.assign(o,{schema:LINK_SCHEMA,app,kind,title:(opts&&opts.title)||'',data,createdAt:new Date().toISOString()});
+ if(opts&&opts.template)o.template=opts.template;if(opts&&opts.notes)o.notes=opts.notes;
+ return o;
+}
+function linkUnknownKeys(env){return Object.keys(env).filter(k=>!LINK_KNOWN.includes(k));}
+function linkEncode(env){const s=unescape(encodeURIComponent(JSON.stringify(env)));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function linkDecode(b){b=b.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';return JSON.parse(decodeURIComponent(escape(atob(b))));}
+function linkURL(targetApp,env){return LINK_URLS[targetApp]+'#link='+linkEncode(env);}
+function linkFromHash(){const m=(location.hash||'').match(/#link=([A-Za-z0-9_\-]+)/);if(!m)return null;try{return linkDecode(m[1]);}catch(e){return {error:true};}}
+function linkClearHash(){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
+
+function circuitEnvelope(){const m=st.meta||{};return linkEnvelope('circuit-lab','circuit',{parts:st.parts,wires:st.wires},{title:m.title||L('מעגל','Circuit'),notes:m.notes,template:m.template,extra:m.extra});}
+function saveJSON(){download(new Blob([JSON.stringify(circuitEnvelope(),null,1)],{type:'application/json'}),'circuit.json');}
+function importCircuit(j,from){
+ // accepts ofir-lab-link/v1 envelopes and the legacy circuit-lab/1 format
+ let meta=null,data=j;
+ if(j&&j.schema===LINK_SCHEMA){
+  if(j.kind==='block-diagram'){if(confirm(L('זו דיאגרמת בלוקים. לפתוח אותה במעבדת הבלוקים?','This is a block diagram. Open it in Control Block Lab?')))window.open(linkURL('control-block-lab',j),'_blank');return false;}
+  if(j.kind!=='circuit')throw 0;data=j.data||{};const extra={};linkUnknownKeys(j).forEach(k=>extra[k]=j[k]);meta={title:j.title,notes:j.notes,template:j.template,extra,from:j.app};}
+ if(!data||!Array.isArray(data.parts)||!Array.isArray(data.wires))throw 0;
+ data.parts.forEach(p=>{if(!TYPES[p.type])throw 0;p.props=Object.assign(defProps(p.type),p.props||{});p.id=p.id||nid('p');p.rot=p.rot||0;});
+ snapshot();st={parts:data.parts,wires:data.wires};if(meta)st.meta=meta;sel=null;changed();fit();
+ const unk=meta?Object.keys(meta.extra).length:0;const note=meta&&meta.notes?(meta.notes[lang]||meta.notes.en||meta.notes.he||''):'';
+ toast((meta&&meta.from==='control-block-lab'?L('נפתח מתוך מעבדת הבלוקים. ','Opened from Control Block Lab. '):L('המעגל נטען. ','Circuit loaded. '))+note+(unk?L(` (${unk} שדות לא מוכרים נשמרו)`,` (${unk} unknown fields preserved)`):''));
+ return true;
+}
+$('fileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{importCircuit(JSON.parse(await f.text()),'file');}catch(err){toast(L('קובץ לא תקין','Invalid file'));}e.target.value='';};
+/* ---- circuit → block-diagram templates (analogy only) ---- */
+function blockTemplate(){
+ if(!R||!R.ok)return {err:L('קודם המעגל צריך להיפתר בלי שגיאות.','The circuit must solve without errors first.')};
+ const net=R.net,oas=st.parts.filter(p=>p.type==='OA');if(oas.length!==1)return null;
+ const oa=oas[0],[nm,np,no]=net.partNodes[oa.id],pn_=id=>net.partNodes[id];
+ const between=(a,b)=>st.parts.filter(p=>p.type==='R'&&((pn_(p.id)[0]===a&&pn_(p.id)[1]===b)||(pn_(p.id)[0]===b&&pn_(p.id)[1]===a)));
+ const vsrcAt=n=>st.parts.find(p=>p.type==='V'&&((pn_(p.id)[0]===n&&pn_(p.id)[1]===0)));
+ const sym=(p,fb)=>/^[A-Za-z](?:\d+|[a-z]+)?$/.test(p.name)?p.name:fb;
+ const A=parseVal(oa.props.A),Av=eng(A,'',3).replace(/\s/g,'');
+ const loopNodes=(withK)=>{const nodes=[],edges=[];let k=0;const N=(type,x,y,o)=>{const id=type.toLowerCase()+(++k);nodes.push(Object.assign({id,type,x,y},o||{}));return id;};const E=(a,b,port,sign)=>edges.push({id:'e'+(++k),from:a,to:b,port:port||'in',sign:sign==null?1:sign});return {nodes,edges,N,E};};
+ if(no===nm&&vsrcAt(np)){const d=loopNodes();const r=d.N('R',40,120),s=d.N('S',130,120),a=d.N('G',250,120,{name:'A'}),p=d.N('P',350,120),c=d.N('C',430,120);
+  d.E(r,s,'W');d.E(s,a);d.E(a,p);d.E(p,c);d.E(p,s,'S',-1);
+  return {template:'voltage-follower',data:{nodes:d.nodes,edges:d.edges},notes:{he:`אנלוגיה: עוקב מתח = לולאת משוב יחידה (β = 1). A = ${Av}, ולכן Vout/Vin = A/(1+A) ≈ 1.`,en:`Analogy: a voltage follower is a unity-feedback loop (β = 1). A = ${Av}, so Vout/Vin = A/(1+A) ≈ 1.`}};}
+ const rf=between(no,nm)[0];
+ if(rf){const r1=between(nm,0)[0],vin=vsrcAt(np);
+  if(r1&&vin){const a1=sym(r1,'R1'),af=sym(rf,'Rf');const R1v=parseVal(r1.props.R),Rfv=parseVal(rf.props.R);
+   const d=loopNodes();const r=d.N('R',40,120),s=d.N('S',130,120),a=d.N('G',250,120,{name:'A'}),p=d.N('P',350,120),c=d.N('C',430,120),b=d.N('G',250,210,{name:'β',flip:true,expr:`${a1}/(${a1}+${af})`});
+   d.E(r,s,'W');d.E(s,a);d.E(a,p);d.E(p,c);d.E(p,b);d.E(b,s,'S',-1);
+   const g=1+Rfv/R1v;
+   return {template:'non-inverting-amp',data:{nodes:d.nodes,edges:d.edges},notes:{he:`אנלוגיה: מגבר לא מהפך = לולאת משוב שלילי. G = A (${Av}), H = β = ${a1}/(${a1}+${af}). כש-A→∞ ההגבר → 1/β = 1+${af}/${a1} = ${(+g.toPrecision(4))}.`,en:`Analogy: a non-inverting amp is a negative-feedback loop. G = A (${Av}), H = β = ${a1}/(${a1}+${af}). As A→∞ the gain → 1/β = 1+${af}/${a1} = ${(+g.toPrecision(4))}.`}};}
+  if(np===0){const vs=st.parts.find(p=>p.type==='V'&&pn_(p.id)[1]===0&&between(pn_(p.id)[0],nm).length);
+   if(vs){const rin=between(pn_(vs.id)[0],nm)[0];const ai=sym(rin,'Rin'),af=sym(rf,'Rf');const g=parseVal(rf.props.R)/parseVal(rin.props.R);
+    const d=loopNodes();const r=d.N('R',40,120),kk=d.N('G',130,120,{name:'K',expr:`${af}/(${ai}+${af})`}),s=d.N('S',230,120),a=d.N('G',340,120,{name:'A'}),p=d.N('P',440,120),c=d.N('C',510,120),b=d.N('G',340,210,{name:'β',flip:true,expr:`${ai}/(${ai}+${af})`});
+    d.E(r,kk);d.E(kk,s,'W',-1);d.E(s,a);d.E(a,p);d.E(p,c);d.E(p,b);d.E(b,s,'S',-1);
+    return {template:'inverting-amp',data:{nodes:d.nodes,edges:d.edges},notes:{he:`אנלוגיה: מגבר מהפך. V− = K·Vin + β·Vout, ושני האותות נכנסים למחבר עם −. כש-A→∞ ההגבר → −K/β = −${af}/${ai} = −${(+g.toPrecision(4))}.`,en:`Analogy: inverting amp. V− = K·Vin + β·Vout, both entering the sum with −. As A→∞ the gain → −K/β = −${af}/${ai} = −${(+g.toPrecision(4))}.`}};}}
+ }
+ return null;
+}
+function openBlocks(dl){
+ const t=blockTemplate();
+ if(t&&t.err){toast(t.err);return;}
+ if(!t){alert(L('אין עדיין מיפוי לדיאגרמת בלוקים עבור המעגל הזה. כרגע ממופים רק: מגבר לא מהפך, עוקב מתח ומגבר מהפך (מגבר שרת אחד). זו אנלוגיה לתבניות קבועות, לא תרגום כללי.','No block-diagram mapping exists for this circuit yet. Currently mapped: non-inverting amp, voltage follower and inverting amp (one op-amp). It is an analogy for fixed templates, not a general translation.'));return;}
+ const env=linkEnvelope('circuit-lab','block-diagram',t.data,{title:L('דיאגרמת בלוקים ממעגל','Block diagram from a circuit'),template:t.template,notes:t.notes});
+ if(dl){download(new Blob([JSON.stringify(env,null,1)],{type:'application/json'}),'block-diagram-link.json');return;}
+ window.open(linkURL('control-block-lab',env),'_blank');
+}
 
 /* ================= menus / toolbar ================= */
 function menu(anchor,items){
@@ -1001,7 +1071,7 @@ function applyLang(){
  $('bEx').textContent='📚 '+L('דוגמאות','Examples');$('bNew').textContent='✚ '+L('חדש','New');
  $('bExp').textContent='📤 '+L('העתק / ייצוא','Copy / Export');$('bVals').textContent='🔢 '+L('ערכים','Values');
  $('bTidy').textContent='✨ '+L('סדר מעגל','Tidy');
- $('bLang').textContent=lang==='he'?'EN':'עב';
+ $('bLang').textContent=lang==='he'?'EN':'עב';$('bBlocks').textContent='🧩 '+L('מעבדת בלוקים','Block Lab');
  document.querySelector('header h1').innerHTML=L('⚡ <b>מעבדת</b> מעגלים','⚡ <b>Circuit</b> Lab');
  document.title=L('מעבדת מעגלים – Circuit Lab','Circuit Lab');
  buildPalette();renderSide();updateToolbar();
@@ -1023,7 +1093,10 @@ $('bExp').onclick=e=>menu(e.currentTarget,[
  ['🖨 '+L('הדפס / שמור כ-PDF','Print / save as PDF'),doPrint],
  ['💾 '+L('שמור מעגל (JSON)','Save circuit (JSON)'),saveJSON],
  ['📂 '+L('טען מעגל (JSON)','Load circuit (JSON)'),()=>$('fileIn').click()],
+ ['🧩 '+L('פתח כדיאגרמת בלוקים','Open as block diagram'),()=>openBlocks(false)],
+ ['⬇ '+L('הורד קובץ קישור לבלוקים (offline)','Download block-diagram link file (offline)'),()=>openBlocks(true)],
 ]);
+$('bBlocks').onclick=()=>window.open(LINK_URLS['control-block-lab'],'_blank');
 document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;$('side').classList.remove('min');renderSide();});
 $('sideMin').onclick=()=>{$('side').classList.toggle('min');$('sideMin').textContent=$('side').classList.contains('min')?'▴':'▾';};
 $('zIn').onclick=()=>{const r=svg.getBoundingClientRect();zoomAt(r.width/2,r.height/2,1.25);};
@@ -1437,6 +1510,7 @@ function togglePlay(){
 st=load();const fresh=!st;if(!st)st={parts:[],wires:[]};
 if(fresh)st=ex('inv');
 applyLang();changed();requestAnimationFrame(fit);
+{const env=linkFromHash();if(env){linkClearHash();try{if(env.error)throw 0;importCircuit(env,'hash');}catch(e){toast(L('קישור לא תקין','Invalid link'));}}}
 </script>
 </body>
 </html>
